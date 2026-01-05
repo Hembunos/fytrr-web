@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     registration_id,
   } = await req.json();
 
-  /* ───────── 1️⃣ VERIFY SIGNATURE ───────── */
+  // 1. Verify Signature
   const body = `${razorpay_order_id}|${razorpay_payment_id}`;
   const expectedSignature = crypto
     .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
@@ -22,10 +22,15 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  /* ───────── 2️⃣ FETCH REGISTRATION ───────── */
+  // 2. Fetch Registration & Category
   const { data: reg, error: regErr } = await supabaseAdmin
     .from("registrations")
-    .select("id, user_id, category_id, status")
+    .select(
+      `
+      id, user_id, status, category_id,
+      categories (name, price, bib_prefix)
+    `
+    )
     .eq("id", registration_id)
     .single();
 
@@ -36,42 +41,34 @@ export async function POST(req: Request) {
     );
   }
 
-  /* 🔐 IDEMPOTENT GUARD */
-  if (reg.status === "paid") {
-    return NextResponse.json({ success: true });
-  }
+  if (reg.status === "paid") return NextResponse.json({ success: true });
 
-  /* ───────── 3️⃣ MARK REGISTRATION AS PAID (EARLY) ───────── */
+  // 3. Update Status to Paid
   await supabaseAdmin
     .from("registrations")
     .update({ status: "paid" })
     .eq("id", registration_id);
 
-  /* ───────── 4️⃣ FETCH CATEGORY (OPTIONAL FOR BIB) ───────── */
-  const { data: category } = await supabaseAdmin
-    .from("categories")
-    .select("name, price, bib_prefix")
-    .eq("id", reg.category_id)
-    .single();
-
-  /* ───────── 5️⃣ FETCH PARTICIPANTS ───────── */
+  // 4. Fetch Participants for this registration
   const { data: participants } = await supabaseAdmin
     .from("participants")
-    .select("id, participant_name, bib_number")
-    .eq("registration_id", registration_id)
-    .order("created_at");
+    .select("id, participant_name")
+    .eq("registration_id", registration_id);
 
-  const bibList: { name: string; bib?: string }[] = [];
+  const bibList = [];
+  const categoryData = Array.isArray(reg.categories)
+    ? reg.categories[0]
+    : reg.categories;
 
-  /* ───────── 6️⃣ ASSIGN BIB (ONLY IF PREFIX EXISTS) ───────── */
-  if (category?.bib_prefix && participants && participants.length > 0) {
+  /* ───────── 5. UPDATED CATEGORY-SPECIFIC BIB LOGIC ───────── */
+  if (categoryData?.bib_prefix && participants) {
     const { data: lastBibRow } = await supabaseAdmin
       .from("participants")
       .select(
         `
-        bib_number,
-        registrations!inner(category_id)
-      `
+      bib_number,
+      registrations!inner(category_id)
+    `
       )
       .eq("registrations.category_id", reg.category_id)
       .not("bib_number", "is", null)
@@ -82,68 +79,59 @@ export async function POST(req: Request) {
     let nextBib = (lastBibRow?.bib_number ?? 100) + 1;
 
     for (const p of participants) {
-      await supabaseAdmin
+      // 1. AWAIT the database update and check for errors
+      const { error: dbUpdateError } = await supabaseAdmin
         .from("participants")
         .update({ bib_number: nextBib })
         .eq("id", p.id);
 
-      bibList.push({
-        name: p.participant_name,
-        bib: `${category.bib_prefix}-${nextBib}`,
-      });
+      if (!dbUpdateError) {
+        // 2. ONLY add the real BIB to the email list if DB saved it successfully
+        bibList.push({
+          name: p.participant_name,
+          bib: `${categoryData.bib_prefix}-${nextBib}`,
+        });
+      } else {
+        // 3. FALLBACK: If DB fails, don't lie in the email
+        console.error(
+          `DB Update failed for ${p.participant_name}:`,
+          dbUpdateError
+        );
+        bibList.push({
+          name: p.participant_name,
+          bib: "Assignment Pending (Contact Support)",
+        });
+      }
 
       nextBib++;
     }
-  } else if (participants) {
-    // No BIB prefix → still success
-    for (const p of participants) {
-      bibList.push({ name: p.participant_name });
-    }
   }
 
-  /* ───────── 7️⃣ INSERT PAYMENT (IDEMPOTENT) ───────── */
-  const { data: existingPayment } = await supabaseAdmin
-    .from("payments")
-    .select("id")
-    .eq("razorpay_payment_id", razorpay_payment_id)
-    .maybeSingle();
+  // 6. Record Payment
+  await supabaseAdmin.from("payments").upsert({
+    registration_id,
+    razorpay_payment_id,
+    amount: (participants?.length || 1) * (categoryData?.price || 0),
+    status: "paid",
+  });
 
-  if (!existingPayment && category) {
-    await supabaseAdmin.from("payments").insert({
-      registration_id,
-      razorpay_payment_id,
-      amount: (participants?.length ?? 1) * category.price,
-      status: "paid",
-    });
-  }
-
-  /* ───────── 8️⃣ SEND EMAIL (BEST EFFORT) ───────── */
-  const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(
+  // 7. Send Email
+  const { data: userData } = await supabaseAdmin.auth.admin.getUserById(
     reg.user_id
   );
-
-  if (authUser?.user?.email) {
+  if (userData?.user?.email) {
     try {
       await sendRegistrationMail({
-        to: authUser.user.email,
-        name: "Team Registration",
-        event: "FYTRR Event",
-        category: category?.name ?? "Event",
-        bib:
-          bibList.length > 0
-            ? bibList
-                .map((b) => (b.bib ? `${b.name} – ${b.bib}` : b.name))
-                .join("<br/>")
-            : "",
+        to: userData.user.email,
+        name: "Athlete",
+        event: "Hyrox Event",
+        category: categoryData?.name || "Event",
+        bib: bibList.map((b) => `${b.name}: ${b.bib}`).join("<br/>"),
       });
-    } catch (err) {
-      console.error("Email failed:", err);
+    } catch (e) {
+      console.error("Mail error", e);
     }
   }
 
-  /* ───────── ✅ RESPONSE ───────── */
-  return NextResponse.json({
-    success: true,
-    participants: bibList,
-  });
+  return NextResponse.json({ success: true });
 }

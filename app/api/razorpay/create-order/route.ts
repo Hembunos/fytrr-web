@@ -22,18 +22,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    // Fetch registration with category price and participant count
     const { data: registration, error } = await supabase
       .from("registrations")
       .select(
         `
         id,
         status,
-        categories (
-          price
-        ),
-        participants (
-          id
-        )
+        categories ( price ),
+        participants ( id )
       `
       )
       .eq("id", registration_id)
@@ -51,19 +48,34 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Already paid" }, { status: 400 });
     }
 
-    /* ✅ FIXED PART */
-    const price = registration.categories?.[0]?.price;
+    /* ───────── FIXED PRICE EXTRACTION ───────── */
+    // Supabase single joins usually return an object, not an array
+    const categoryData: any = registration.categories;
+    const price = Array.isArray(categoryData)
+      ? categoryData[0]?.price
+      : categoryData?.price;
     const participantCount = registration.participants?.length ?? 0;
 
     if (!price || participantCount === 0) {
-      return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Invalid registration data" },
+        { status: 400 }
+      );
     }
 
+    if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
+      return NextResponse.json(
+        { error: "Razorpay keys missing" },
+        { status: 500 }
+      );
+    }
+
+    // Razorpay expects amount in PAISA (INR * 100)
     const totalAmount = price * participantCount;
 
     const razorpay = new Razorpay({
-      key_id: process.env.RAZORPAY_KEY_ID!,
-      key_secret: process.env.RAZORPAY_KEY_SECRET!,
+      key_id: process.env.RAZORPAY_KEY_ID,
+      key_secret: process.env.RAZORPAY_KEY_SECRET,
     });
 
     const order = await razorpay.orders.create({
@@ -78,7 +90,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(order);
   } catch (err: any) {
-    console.error(err);
+    console.error("Create Order Error:", err);
     return NextResponse.json(
       { error: err.message || "Server error" },
       { status: 500 }
