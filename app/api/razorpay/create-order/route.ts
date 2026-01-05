@@ -13,7 +13,6 @@ export async function POST(req: Request) {
       );
     }
 
-    /* ───── SUPABASE + AUTH ───── */
     const supabase = await createSupabaseServer();
     const {
       data: { user },
@@ -23,7 +22,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    /* ───── FETCH REGISTRATION (SAFE & GENERIC) ───── */
     const { data: registration, error } = await supabase
       .from("registrations")
       .select(
@@ -49,36 +47,27 @@ export async function POST(req: Request) {
       );
     }
 
-    /* ───── ALREADY PAID GUARD ───── */
     if (registration.status === "paid") {
-      return NextResponse.json(
-        { error: "Registration already paid" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Already paid" }, { status: 400 });
     }
 
-    /* ───── AMOUNT CALCULATION (SOURCE OF TRUTH) ───── */
-    const price = registration.categories?.price;
+    /* ✅ FIXED PART */
+    const price = registration.categories?.[0]?.price;
     const participantCount = registration.participants?.length ?? 0;
 
     if (!price || participantCount === 0) {
-      return NextResponse.json(
-        { error: "Invalid amount or participants" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
     }
 
     const totalAmount = price * participantCount;
 
-    /* ───── RAZORPAY INIT ───── */
     const razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID!,
       key_secret: process.env.RAZORPAY_KEY_SECRET!,
     });
 
-    /* ───── CREATE ORDER ───── */
     const order = await razorpay.orders.create({
-      amount: totalAmount * 100, // INR → paise
+      amount: totalAmount * 100,
       currency: "INR",
       receipt: `reg_${registration_id}`,
       notes: {
@@ -89,7 +78,7 @@ export async function POST(req: Request) {
 
     return NextResponse.json(order);
   } catch (err: any) {
-    console.error("Create order error:", err);
+    console.error(err);
     return NextResponse.json(
       { error: err.message || "Server error" },
       { status: 500 }
