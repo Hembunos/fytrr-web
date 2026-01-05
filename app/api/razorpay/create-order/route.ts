@@ -48,7 +48,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Already paid" }, { status: 400 });
     }
 
-    /* ───────── FIXED PRICE EXTRACTION ───────── */
     // Supabase single joins usually return an object, not an array
     const categoryData: any = registration.categories;
     const price = Array.isArray(categoryData)
@@ -83,7 +82,7 @@ export async function POST(req: Request) {
       currency: "INR",
       receipt: `reg_${registration_id}`,
       notes: {
-        registration_id,
+        registration_id, // CRITICAL: Used by Webhook to identify the record
         user_id: user.id,
       },
     });
