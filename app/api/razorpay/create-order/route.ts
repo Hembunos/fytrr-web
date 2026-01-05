@@ -23,14 +23,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    /* 📦 REGISTRATION + CATEGORY + PARTICIPANTS COUNT */
+    /* 📦 FETCH REGISTRATION + CATEGORY + PARTICIPANTS */
     const { data: registration, error } = await supabase
       .from("registrations")
       .select(
         `
         id,
         status,
-        categories (
+        categories!inner (
           price
         ),
         participants (
@@ -43,24 +43,23 @@ export async function POST(req: Request) {
       .single();
 
     if (error || !registration) {
+      console.error("Registration fetch error:", error);
       return NextResponse.json(
         { error: "Invalid registration" },
         { status: 400 }
       );
     }
 
+    /* 🛑 ALREADY PAID = DO NOT CREATE NEW ORDER */
     if (registration.status === "paid") {
       return NextResponse.json({ error: "Already paid" }, { status: 400 });
     }
 
-    const price = registration.categories?.price;
-    const participantCount = registration.participants?.length ?? 0;
+    const price = registration.categories.price;
+    const participantCount = registration.participants.length;
 
     if (!price || participantCount === 0) {
-      return NextResponse.json(
-        { error: "Invalid amount or participants" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
     }
 
     const totalAmount = price * participantCount;
@@ -74,9 +73,10 @@ export async function POST(req: Request) {
     const order = await razorpay.orders.create({
       amount: totalAmount * 100, // paise
       currency: "INR",
-      receipt: registration_id,
+      receipt: `reg_${registration_id}`,
       notes: {
-        registration_id, // 🔥 REQUIRED FOR WEBHOOK
+        registration_id,
+        user_id: user.id,
       },
     });
 
