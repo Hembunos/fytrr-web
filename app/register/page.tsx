@@ -39,7 +39,7 @@ export default function RegisterPage() {
     });
   }, [categoryId]);
 
-  /* ───────── FETCH CATEGORY PRICE ───────── */
+  /* ───────── FETCH CATEGORY ───────── */
   useEffect(() => {
     if (!categoryId) return;
 
@@ -56,7 +56,6 @@ export default function RegisterPage() {
       });
   }, [categoryId]);
 
-  /* ───────── CLEANED PARTICIPANTS ───────── */
   const cleanedParticipants = useMemo(
     () => participants.map((p) => p.trim()).filter(Boolean),
     [participants]
@@ -68,7 +67,6 @@ export default function RegisterPage() {
   async function handleRegister() {
     if (!userId || loading) return;
 
-    // ❌ Empty field check
     if (participants.some((p) => !p.trim())) {
       alert("Please fill all participant names");
       return;
@@ -85,7 +83,7 @@ export default function RegisterPage() {
       /* 1️⃣ Fetch category */
       const { data: category, error: catError } = await supabase
         .from("categories")
-        .select("id, event_id, price")
+        .select("id, event_id")
         .eq("id", categoryId)
         .single();
 
@@ -94,14 +92,14 @@ export default function RegisterPage() {
         return;
       }
 
-      /* 2️⃣ Create ONE registration (pending) */
+      /* 2️⃣ Create registration (PAYMENT PENDING) */
       const { data: registration, error: regError } = await supabase
         .from("registrations")
         .insert({
           user_id: userId,
           category_id: categoryId,
           event_id: category.event_id,
-          status: "pending",
+          status: "payment_pending", // ✅ FIXED
         })
         .select()
         .single();
@@ -124,13 +122,12 @@ export default function RegisterPage() {
         return;
       }
 
-      /* 4️⃣ Create Razorpay order */
+      /* 4️⃣ Create Razorpay order (NO AMOUNT FROM FRONTEND) */
       const orderRes = await fetch("/api/razorpay/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           registration_id: registration.id,
-          amount: totalAmount,
         }),
       });
 
@@ -142,11 +139,6 @@ export default function RegisterPage() {
       }
 
       /* 5️⃣ Open Razorpay */
-      if (!window.Razorpay) {
-        alert("Razorpay SDK not loaded");
-        return;
-      }
-
       const razorpay = new window.Razorpay({
         key: process.env.NEXT_PUBLIC_RAZORPAY_KEY_ID,
         amount: order.amount,
@@ -199,7 +191,6 @@ export default function RegisterPage() {
     <div className="p-6 max-w-sm mx-auto">
       <h1 className="text-xl mb-4">Register</h1>
 
-      {/* PARTICIPANTS */}
       {participants.map((name, index) => (
         <input
           key={index}
@@ -214,7 +205,6 @@ export default function RegisterPage() {
         />
       ))}
 
-      {/* ADD PARTICIPANT */}
       <button
         type="button"
         className="text-sm text-blue-500 mb-4"
@@ -229,7 +219,6 @@ export default function RegisterPage() {
         + Add another participant
       </button>
 
-      {/* TOTAL */}
       {cleanedParticipants.length > 0 && (
         <div className="mb-3 text-sm text-zinc-600">
           <div>
@@ -241,7 +230,6 @@ export default function RegisterPage() {
         </div>
       )}
 
-      {/* SUBMIT */}
       <button
         className="bg-black text-white p-2 w-full"
         disabled={loading || cleanedParticipants.length === 0}

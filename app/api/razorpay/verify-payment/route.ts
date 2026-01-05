@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     registration_id,
   } = await req.json();
 
-  /* ───────────────── 1️⃣ VERIFY RAZORPAY SIGNATURE ───────────────── */
+  /* ───────── 1️⃣ VERIFY SIGNATURE ───────── */
   const body = `${razorpay_order_id}|${razorpay_payment_id}`;
   const expectedSignature = crypto
     .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
   }
 
-  /* ───────────────── 2️⃣ FETCH REGISTRATION ───────────────── */
+  /* ───────── 2️⃣ FETCH REGISTRATION ───────── */
   const { data: reg, error: regErr } = await supabaseAdmin
     .from("registrations")
     .select("id, user_id, category_id, status")
@@ -36,96 +36,88 @@ export async function POST(req: Request) {
     );
   }
 
-  /* 🔐 HARD GUARD → ALREADY PAID */
+  /* 🔐 IDEMPOTENT GUARD */
   if (reg.status === "paid") {
     return NextResponse.json({ success: true });
   }
 
-  /* ───────────────── 3️⃣ FETCH CATEGORY ───────────────── */
-  const { data: category, error: catErr } = await supabaseAdmin
-    .from("categories")
-    .select("id, name, price, bib_prefix")
-    .eq("id", reg.category_id)
-    .single();
-
-  if (catErr || !category?.bib_prefix) {
-    return NextResponse.json(
-      { error: "Category / BIB prefix missing" },
-      { status: 400 }
-    );
-  }
-
-  /* ───────────────── 4️⃣ FETCH PARTICIPANTS ───────────────── */
-  const { data: participants, error: partErr } = await supabaseAdmin
-    .from("participants")
-    .select("id, participant_name, bib_number")
-    .eq("registration_id", registration_id)
-    .order("created_at");
-
-  if (partErr || !participants || participants.length === 0) {
-    return NextResponse.json(
-      { error: "No participants found" },
-      { status: 400 }
-    );
-  }
-
-  /* ───────────────── 5️⃣ FIND LAST BIB (CATEGORY-WISE) ───────────────── */
-  const { data: lastBibRow } = await supabaseAdmin
-    .from("participants")
-    .select(
-      `
-      bib_number,
-      registrations!inner(category_id)
-    `
-    )
-    .eq("registrations.category_id", reg.category_id)
-    .not("bib_number", "is", null)
-    .order("bib_number", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  let nextBib = (lastBibRow?.bib_number ?? 100) + 1;
-
-  /* ───────────────── 6️⃣ ASSIGN BIB TO EACH PARTICIPANT ───────────────── */
-  const bibList: { name: string; bib: string }[] = [];
-
-  for (const p of participants) {
-    await supabaseAdmin
-      .from("participants")
-      .update({ bib_number: nextBib })
-      .eq("id", p.id);
-
-    bibList.push({
-      name: p.participant_name,
-      bib: `${category.bib_prefix}-${nextBib}`,
-    });
-
-    nextBib++;
-  }
-
-  /* ───────────────── 7️⃣ MARK REGISTRATION AS PAID ───────────────── */
+  /* ───────── 3️⃣ MARK REGISTRATION AS PAID (EARLY) ───────── */
   await supabaseAdmin
     .from("registrations")
     .update({ status: "paid" })
     .eq("id", registration_id);
 
-  /* ───────────────── 8️⃣ INSERT PAYMENT (IDEMPOTENT) ───────────────── */
+  /* ───────── 4️⃣ FETCH CATEGORY (OPTIONAL FOR BIB) ───────── */
+  const { data: category } = await supabaseAdmin
+    .from("categories")
+    .select("name, price, bib_prefix")
+    .eq("id", reg.category_id)
+    .single();
+
+  /* ───────── 5️⃣ FETCH PARTICIPANTS ───────── */
+  const { data: participants } = await supabaseAdmin
+    .from("participants")
+    .select("id, participant_name, bib_number")
+    .eq("registration_id", registration_id)
+    .order("created_at");
+
+  const bibList: { name: string; bib?: string }[] = [];
+
+  /* ───────── 6️⃣ ASSIGN BIB (ONLY IF PREFIX EXISTS) ───────── */
+  if (category?.bib_prefix && participants && participants.length > 0) {
+    const { data: lastBibRow } = await supabaseAdmin
+      .from("participants")
+      .select(
+        `
+        bib_number,
+        registrations!inner(category_id)
+      `
+      )
+      .eq("registrations.category_id", reg.category_id)
+      .not("bib_number", "is", null)
+      .order("bib_number", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    let nextBib = (lastBibRow?.bib_number ?? 100) + 1;
+
+    for (const p of participants) {
+      await supabaseAdmin
+        .from("participants")
+        .update({ bib_number: nextBib })
+        .eq("id", p.id);
+
+      bibList.push({
+        name: p.participant_name,
+        bib: `${category.bib_prefix}-${nextBib}`,
+      });
+
+      nextBib++;
+    }
+  } else if (participants) {
+    // No BIB prefix → still success
+    for (const p of participants) {
+      bibList.push({ name: p.participant_name });
+    }
+  }
+
+  /* ───────── 7️⃣ INSERT PAYMENT (IDEMPOTENT) ───────── */
   const { data: existingPayment } = await supabaseAdmin
     .from("payments")
     .select("id")
     .eq("razorpay_payment_id", razorpay_payment_id)
     .maybeSingle();
 
-  if (!existingPayment) {
+  if (!existingPayment && category) {
     await supabaseAdmin.from("payments").insert({
       registration_id,
       razorpay_payment_id,
-      amount: participants.length * category.price,
+      amount: (participants?.length ?? 1) * category.price,
       status: "paid",
     });
   }
 
-  /* ───────────────── 9️⃣ SEND EMAIL (NON-BLOCKING) ───────────────── */
+  /* ───────── 8️⃣ SEND EMAIL (BEST EFFORT) ───────── */
   const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(
     reg.user_id
   );
@@ -136,15 +128,20 @@ export async function POST(req: Request) {
         to: authUser.user.email,
         name: "Team Registration",
         event: "FYTRR Event",
-        category: category.name,
-        bib: bibList.map((b) => `${b.name} – ${b.bib}`).join("<br/>"),
+        category: category?.name ?? "Event",
+        bib:
+          bibList.length > 0
+            ? bibList
+                .map((b) => (b.bib ? `${b.name} – ${b.bib}` : b.name))
+                .join("<br/>")
+            : "",
       });
     } catch (err) {
       console.error("Email failed:", err);
     }
   }
 
-  /* ───────────────── ✅ RESPONSE ───────────────── */
+  /* ───────── ✅ RESPONSE ───────── */
   return NextResponse.json({
     success: true,
     participants: bibList,
