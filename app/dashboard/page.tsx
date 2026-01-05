@@ -62,8 +62,9 @@ export default async function DashboardPage() {
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="font-medium">
-                      {reg.events?.name} • {reg.categories?.[0]?.name}
+                      {reg.events?.[0]?.name} • {reg.categories?.[0]?.name}
                     </p>
+
                     <p className="text-xs text-zinc-400">
                       {new Date(reg.created_at).toLocaleDateString()}
                     </p>
