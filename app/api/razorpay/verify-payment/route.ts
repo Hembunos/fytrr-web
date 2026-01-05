@@ -1,0 +1,157 @@
+import crypto from "crypto";
+import { NextResponse } from "next/server";
+import { supabaseAdmin } from "@/lib/supabase/admin";
+import { sendRegistrationMail } from "@/lib/mailer";
+
+export async function POST(req: Request) {
+  const {
+    razorpay_order_id,
+    razorpay_payment_id,
+    razorpay_signature,
+    registration_id,
+  } = await req.json();
+
+  /* ───────────────── 1️⃣ VERIFY RAZORPAY SIGNATURE ───────────────── */
+  const body = `${razorpay_order_id}|${razorpay_payment_id}`;
+  const expected = crypto
+    .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET!)
+    .update(body)
+    .digest("hex");
+
+  if (expected !== razorpay_signature) {
+    return NextResponse.json({ error: "Invalid signature" }, { status: 400 });
+  }
+
+  /* ───────────────── 2️⃣ FETCH REGISTRATION ───────────────── */
+  const { data: reg } = await supabaseAdmin
+    .from("registrations")
+    .select("id, user_id, category_id")
+    .eq("id", registration_id)
+    .single();
+
+  if (!reg) {
+    return NextResponse.json(
+      { error: "Registration not found" },
+      { status: 404 }
+    );
+  }
+
+  /* ───────────────── 3️⃣ IDEMPOTENT CHECK (BIB ALREADY ASSIGNED?) ───────────────── */
+  const { data: existingBib } = await supabaseAdmin
+    .from("participants")
+    .select("id")
+    .eq("registration_id", registration_id)
+    .not("bib_number", "is", null)
+    .limit(1)
+    .maybeSingle();
+
+  if (existingBib) {
+    return NextResponse.json({ success: true });
+  }
+
+  /* ───────────────── 4️⃣ FETCH CATEGORY ───────────────── */
+  const { data: category } = await supabaseAdmin
+    .from("categories")
+    .select("id, name, price, bib_prefix")
+    .eq("id", reg.category_id)
+    .single();
+
+  if (!category?.bib_prefix) {
+    return NextResponse.json({ error: "BIB prefix missing" }, { status: 400 });
+  }
+
+  /* ───────────────── 5️⃣ FETCH PARTICIPANTS ───────────────── */
+  const { data: participants } = await supabaseAdmin
+    .from("participants")
+    .select("id, participant_name")
+    .eq("registration_id", registration_id)
+    .order("created_at");
+
+  if (!participants || participants.length === 0) {
+    return NextResponse.json(
+      { error: "No participants found" },
+      { status: 400 }
+    );
+  }
+
+  /* ───────────────── 6️⃣ FIND LAST BIB (CATEGORY-WISE) ───────────────── */
+  const { data: lastBibRow } = await supabaseAdmin
+    .from("participants")
+    .select(
+      `
+      bib_number,
+      registrations!inner(category_id)
+    `
+    )
+    .eq("registrations.category_id", reg.category_id)
+    .not("bib_number", "is", null)
+    .order("bib_number", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  let nextBib = (lastBibRow?.bib_number ?? 100) + 1;
+
+  /* ───────────────── 7️⃣ ASSIGN BIB TO EACH PARTICIPANT ───────────────── */
+  const bibList: { name: string; bib: string }[] = [];
+
+  for (const p of participants) {
+    await supabaseAdmin
+      .from("participants")
+      .update({ bib_number: nextBib })
+      .eq("id", p.id);
+
+    bibList.push({
+      name: p.participant_name,
+      bib: `${category.bib_prefix}-${nextBib}`,
+    });
+
+    nextBib++;
+  }
+
+  /* ───────────────── 8️⃣ MARK REGISTRATION AS PAID ───────────────── */
+  await supabaseAdmin
+    .from("registrations")
+    .update({ status: "paid" })
+    .eq("id", registration_id);
+
+  /* ───────────────── 9️⃣ INSERT PAYMENT (IDEMPOTENT) ───────────────── */
+  const { data: existingPayment } = await supabaseAdmin
+    .from("payments")
+    .select("id")
+    .eq("razorpay_payment_id", razorpay_payment_id)
+    .maybeSingle();
+
+  if (!existingPayment) {
+    await supabaseAdmin.from("payments").insert({
+      registration_id,
+      razorpay_payment_id,
+      amount: participants.length * category.price,
+      status: "paid",
+    });
+  }
+
+  /* ───────────────── 🔟 SEND CONFIRMATION EMAIL (NON-BLOCKING) ───────────────── */
+  const { data: authUser } = await supabaseAdmin.auth.admin.getUserById(
+    reg.user_id
+  );
+
+  if (authUser?.user?.email) {
+    try {
+      await sendRegistrationMail({
+        to: authUser.user.email,
+        name: "Team Registration",
+        event: "FYTRR Event",
+        category: category.name,
+        bib: bibList.map((b) => `${b.name} – ${b.bib}`).join("<br/>"),
+      });
+    } catch (err) {
+      console.error("Email failed:", err);
+    }
+  }
+
+  /* ───────────────── ✅ RESPONSE ───────────────── */
+  return NextResponse.json({
+    success: true,
+    participants: bibList,
+  });
+}
