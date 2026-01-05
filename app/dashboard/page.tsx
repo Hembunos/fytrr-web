@@ -53,16 +53,16 @@ export default async function DashboardPage() {
       ) : (
         <div className="space-y-4">
           {registrations.map((reg) => {
-            const totalAmount =
-              (reg.categories?.price ?? 0) * (reg.participants?.length ?? 0);
+            const price = reg.categories?.[0]?.price ?? 0;
+            const bibPrefix = reg.categories?.[0]?.bib_prefix ?? "";
+            const totalAmount = price * (reg.participants?.length ?? 0);
 
             return (
               <div key={reg.id} className="border rounded p-4 space-y-3">
-                {/* 🔹 EVENT + CATEGORY */}
                 <div className="flex justify-between items-start">
                   <div>
                     <p className="font-medium">
-                      {reg.events?.name} • {reg.categories?.name}
+                      {reg.events?.name} • {reg.categories?.[0]?.name}
                     </p>
                     <p className="text-xs text-zinc-400">
                       {new Date(reg.created_at).toLocaleDateString()}
@@ -72,7 +72,6 @@ export default async function DashboardPage() {
                   <div className="text-right">
                     <p className="font-semibold">₹{totalAmount}</p>
 
-                    {/* 🔐 REGISTRATION STATUS */}
                     {reg.status === "paid" ? (
                       <span className="inline-block mt-1 text-xs px-2 py-0.5 rounded bg-green-700 text-white">
                         Paid
@@ -85,7 +84,6 @@ export default async function DashboardPage() {
                   </div>
                 </div>
 
-                {/* 👥 PARTICIPANTS */}
                 <div className="pt-2 border-t space-y-1">
                   {reg.participants.map((p) => (
                     <div
@@ -94,11 +92,10 @@ export default async function DashboardPage() {
                     >
                       <span>{p.participant_name}</span>
 
-                      {/* ✅ FINAL, CORRECT LOGIC */}
                       {reg.status === "paid" ? (
                         p.bib_number ? (
                           <span className="text-xs px-2 py-0.5 rounded bg-zinc-800 text-white">
-                            BIB {reg.categories?.bib_prefix}-{p.bib_number}
+                            BIB {bibPrefix}-{p.bib_number}
                           </span>
                         ) : (
                           <span className="text-xs px-2 py-0.5 rounded bg-green-700 text-white">
