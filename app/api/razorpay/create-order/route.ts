@@ -13,7 +13,7 @@ export async function POST(req: Request) {
       );
     }
 
-    // 🔐 Auth
+    /* 🔐 AUTH */
     const supabase = await createSupabaseServer();
     const {
       data: { user },
@@ -23,7 +23,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    // 📦 Registration + price
+    /* 📦 REGISTRATION + CATEGORY + PARTICIPANTS COUNT */
     const { data: registration, error } = await supabase
       .from("registrations")
       .select(
@@ -32,6 +32,9 @@ export async function POST(req: Request) {
         status,
         categories (
           price
+        ),
+        participants (
+          id
         )
       `
       )
@@ -50,26 +53,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Already paid" }, { status: 400 });
     }
 
-    const amount = registration.categories?.price;
+    const price = registration.categories?.price;
+    const participantCount = registration.participants?.length ?? 0;
 
-    if (!amount || amount <= 0) {
-      return NextResponse.json({ error: "Invalid amount" }, { status: 400 });
+    if (!price || participantCount === 0) {
+      return NextResponse.json(
+        { error: "Invalid amount or participants" },
+        { status: 400 }
+      );
     }
 
-    // 💳 Razorpay
+    const totalAmount = price * participantCount;
+
+    /* 💳 RAZORPAY ORDER */
     const razorpay = new Razorpay({
       key_id: process.env.RAZORPAY_KEY_ID!,
       key_secret: process.env.RAZORPAY_KEY_SECRET!,
     });
 
     const order = await razorpay.orders.create({
-      amount: amount * 100,
+      amount: totalAmount * 100, // paise
       currency: "INR",
       receipt: registration_id,
+      notes: {
+        registration_id, // 🔥 REQUIRED FOR WEBHOOK
+      },
     });
 
     return NextResponse.json(order);
   } catch (err: any) {
+    console.error("Create order error:", err);
     return NextResponse.json(
       { error: err.message || "Server error" },
       { status: 500 }
