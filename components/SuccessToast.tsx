@@ -1,39 +1,63 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 
 export default function SuccessToast() {
   const searchParams = useSearchParams();
-  const [visible, setVisible] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+  const [show, setShow] = useState(false);
+
+  const isSuccess = searchParams.get("success") === "true";
 
   useEffect(() => {
-    if (searchParams.get("success") === "true") {
-      setVisible(true);
-    }
-  }, [searchParams]);
+    if (isSuccess) {
+      setShow(true);
 
-  if (!visible) return null;
+      // 1. Wait 5 seconds for the user to read the message
+      const timer = setTimeout(() => {
+        setShow(false);
+
+        // 2. Remove "?success=true" from the URL without refreshing the page
+        const params = new URLSearchParams(searchParams.toString());
+        params.delete("success");
+        router.replace(
+          `${pathname}${params.toString() ? `?${params.toString()}` : ""}`,
+          {
+            scroll: false,
+          }
+        );
+      }, 5000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [isSuccess, router, pathname, searchParams]);
+
+  if (!show) return null;
 
   return (
-    <div className="mb-6 p-4 bg-green-100 border border-green-200 text-green-800 rounded-xl flex items-center gap-3 animate-in fade-in slide-in-from-top-4">
+    <div className="bg-green-100 border border-green-200 text-green-800 p-4 rounded-2xl mb-6 flex items-center gap-3 animate-in fade-in slide-in-from-top-4 duration-500">
       <div className="bg-green-500 text-white rounded-full p-1">
         <svg
           xmlns="http://www.w3.org/2000/svg"
-          className="h-4 w-4"
-          viewBox="0 0 20 20"
-          fill="currentColor"
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         >
-          <path
-            fillRule="evenodd"
-            d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-            clipRule="evenodd"
-          />
+          <path d="M20 6 9 17l-5-5" />
         </svg>
       </div>
       <div>
-        <p className="font-bold text-sm">Payment Successful!</p>
-        <p className="text-xs">
+        <p className="font-black text-sm uppercase italic tracking-tight">
+          Payment Successful!
+        </p>
+        <p className="text-xs opacity-80">
           Your athletes are registered. BIB numbers are shown below.
         </p>
       </div>

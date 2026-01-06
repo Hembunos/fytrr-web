@@ -1,24 +1,44 @@
-import { redirect } from "next/navigation";
 import { createSupabaseServer } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import AdminClientWrapper from "@/components/admin/AdminClientWrapper";
 
-export default async function AdminPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AdminDashboard() {
   const supabase = await createSupabaseServer();
-
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  if (!user) redirect("/login");
+  // 1. Role Check
 
-  const role = user.user_metadata?.role;
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user?.id)
+    .single();
 
-  if (role !== "admin") {
+  if (profile?.role !== "admin") {
     redirect("/dashboard");
   }
 
-  return (
-    <div className="p-6">
-      <h1 className="text-xl">Admin Dashboard</h1>
-    </div>
-  );
+  // 2. Fetch Events with Registration & Category counts
+  const { data: events } = await supabase
+    .from("events")
+    .select(
+      `
+    *,
+    categories (*),
+    registrations (
+      id,
+      status,
+      participants (id, participant_name, bib_number),
+      payments (amount, status)
+    )
+  `
+    )
+    .order("event_date", { ascending: true });
+
+  // Pass everything to the Client Wrapper for Interactivity
+  return <AdminClientWrapper initialEvents={events || []} />;
 }

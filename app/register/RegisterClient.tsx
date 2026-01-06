@@ -109,82 +109,176 @@ export default function RegisterClient() {
   }
 
   return (
-    <div className="p-6 max-w-sm mx-auto space-y-4">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">
+    <div className="p-8 max-w-md mx-auto space-y-8 bg-white shadow-2xl rounded-[2.5rem] border border-zinc-100 mt-10 mb-20">
+      {/* Header Section */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">
+          <span className="px-2 py-0.5 bg-zinc-100 rounded italic">
+            Step 02
+          </span>
+          <span>•</span>
+          <span>Athlete Details</span>
+        </div>
+        <h1 className="text-4xl font-black italic uppercase tracking-tighter">
           {categoryData?.name || "Register"}
         </h1>
-        <p className="text-zinc-500 text-sm">
-          Enter the names of the athletes participating
+        <p className="text-zinc-500 text-xs font-medium uppercase tracking-wide">
+          Enter names exactly as they should appear on the BIB
         </p>
       </div>
 
-      <div className="space-y-3">
+      {/* Athlete Inputs */}
+      <div className="space-y-4">
         {participants.map((name, index) => (
-          <div key={index} className="flex gap-2">
-            <input
-              className="border rounded-lg p-2 flex-1 focus:ring-2 focus:ring-black outline-none transition-all disabled:bg-zinc-100"
-              placeholder={`Athlete ${index + 1} Full Name`}
-              value={name}
-              disabled={loading}
-              onChange={(e) => {
-                const updated = [...participants];
-                updated[index] = e.target.value;
-                setParticipants(updated);
-              }}
-            />
-            {participants.length > 1 && !loading && (
-              <button
-                onClick={() =>
-                  setParticipants(participants.filter((_, i) => i !== index))
-                }
-                className="text-red-500 px-2 hover:bg-red-50 rounded-md transition-colors"
-                title="Remove Athlete"
-              >
-                ✕
-              </button>
-            )}
+          <div key={index} className="group relative flex flex-col gap-1">
+            <label className="text-[10px] uppercase font-bold text-zinc-400 ml-1">
+              Athlete {index + 1}
+            </label>
+            <div className="flex gap-3">
+              <div className="relative flex-1">
+                <input
+                  className="w-full border-2 border-zinc-100 rounded-2xl p-4 focus:border-black outline-none transition-all disabled:bg-zinc-50 font-bold placeholder:font-normal placeholder:text-zinc-300"
+                  placeholder="Full Name"
+                  value={name}
+                  disabled={loading}
+                  onChange={(e) => {
+                    const updated = [...participants];
+                    updated[index] = e.target.value;
+                    setParticipants(updated);
+                  }}
+                />
+              </div>
+              {participants.length > 1 && !loading && (
+                <button
+                  onClick={() =>
+                    setParticipants(participants.filter((_, i) => i !== index))
+                  }
+                  className="bg-red-50 text-red-500 px-4 rounded-2xl hover:bg-red-500 hover:text-white transition-all group-hover:opacity-100 md:opacity-0"
+                  title="Remove Athlete"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M18 6 6 18" />
+                    <path d="m6 6 12 12" />
+                  </svg>
+                </button>
+              )}
+            </div>
           </div>
         ))}
+
+        {!loading && (
+          <button
+            type="button"
+            className="flex items-center gap-2 px-2 text-xs font-black uppercase tracking-widest text-zinc-500 hover:text-black transition-colors py-2"
+            onClick={() => setParticipants([...participants, ""])}
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M5 12h14" />
+              <path d="M12 5v14" />
+            </svg>
+            Add Another Athlete
+          </button>
+        )}
       </div>
 
-      {!loading && (
-        <button
-          type="button"
-          className="text-sm font-semibold text-zinc-600 hover:text-black transition-colors"
-          onClick={() => setParticipants([...participants, ""])}
-        >
-          + Add Another Athlete
-        </button>
-      )}
-
-      <div className="bg-zinc-50 p-4 rounded-xl border">
-        <div className="flex justify-between text-sm items-center">
-          <span className="text-zinc-600">
-            {categoryData?.name || "Total"} (x{cleanedNames.length})
+      {/* Price Breakdown Card */}
+      <div className="bg-zinc-900 text-white p-6 rounded-[2rem] shadow-xl space-y-3">
+        <div className="flex justify-between text-[10px] uppercase font-black tracking-widest text-zinc-500">
+          <span>Description</span>
+          <span>Amount</span>
+        </div>
+        <div className="h-[1px] bg-zinc-800" />
+        <div className="flex justify-between items-center">
+          <div className="space-y-0.5">
+            <p className="text-sm font-bold uppercase tracking-tight italic">
+              {categoryData?.name || "Entry Fee"}
+            </p>
+            <p className="text-[10px] text-zinc-500">
+              x{cleanedNames.length} Participant(s)
+            </p>
+          </div>
+          <span className="text-2xl font-black italic tracking-tighter">
+            ₹{totalAmount}
           </span>
-          <span className="font-bold text-lg">₹{totalAmount}</span>
         </div>
       </div>
 
-      <button
-        className="bg-black text-white p-3 rounded-xl w-full font-bold hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md active:scale-[0.98]"
-        disabled={loading || cleanedNames.length === 0}
-        onClick={handleRegister}
-      >
-        {loading ? (
-          <div className="flex items-center justify-center gap-2">
-            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-            Processing...
+      {/* Action Button */}
+      <div className="space-y-4">
+        <button
+          className="group relative bg-black text-white p-5 rounded-2xl w-full font-black uppercase tracking-[0.2em] text-sm hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] overflow-hidden"
+          disabled={loading || cleanedNames.length === 0}
+          onClick={handleRegister}
+        >
+          <div className="relative z-10 flex items-center justify-center gap-3">
+            {loading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                Processing Securely...
+              </>
+            ) : (
+              <>
+                Pay Now
+                <svg
+                  className="group-hover:translate-x-1 transition-transform"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M5 12h14" />
+                  <path d="m12 5 7 7-7 7" />
+                </svg>
+              </>
+            )}
           </div>
-        ) : (
-          `Proceed to Pay ₹${totalAmount}`
-        )}
-      </button>
+        </button>
 
-      <p className="text-[10px] text-zinc-400 text-center">
-        By proceeding, you agree to the event terms and conditions.
-      </p>
+        <div className="flex items-center justify-center gap-2">
+          <svg
+            className="text-green-500"
+            xmlns="http://www.w3.org/2000/svg"
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="4"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+          </svg>
+          <p className="text-[9px] uppercase font-bold text-zinc-400 tracking-widest">
+            Secure Razorpay Encrypted Checkout
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
