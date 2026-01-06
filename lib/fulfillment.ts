@@ -3,7 +3,7 @@ import { sendRegistrationMail } from "@/lib/mailer";
 
 export async function fulfillOrder(registrationId: string) {
   // 1. Call the Database Function (RPC)
-  // This handles the status update and BIB assignment atomically
+  // Status update aur BIB assignment ko handle karta hai
   const { data: bibData, error: rpcError } = await supabaseAdmin.rpc(
     "assign_bibs_atomic",
     { reg_id: registrationId }
@@ -14,20 +14,19 @@ export async function fulfillOrder(registrationId: string) {
     return { success: false };
   }
 
-  // Idempotency: If bibData is empty, it means the RPC already ran once
-  // and the status was already 'paid'
+  // Idempotency check: Agar pehle se paid hai toh bibData khali aayega
   if (!bibData || bibData.length === 0) {
     console.log("Order already fulfilled or no participants found.");
     return { success: true };
   }
 
-  // 2. Fetch User Email & Category Name
-  // We explicitly select the category via the foreign key link
+  // 2. Fetch Details (User, Category aur Event Name dynamic nikalne ke liye)
   const { data: reg, error: fetchErr } = await supabaseAdmin
     .from("registrations")
     .select(
       `
       user_id, 
+      events ( name ),
       categories:categories!registrations_category_id_fkey ( name )
     `
     )
@@ -39,21 +38,26 @@ export async function fulfillOrder(registrationId: string) {
     return { success: false };
   }
 
-  // Handle Supabase join data structure (could be object or array)
+  // 3. Handle Join Data Structure (Object vs Array check)
   const categoryData: any = reg.categories;
   const categoryName = Array.isArray(categoryData)
     ? categoryData[0]?.name
     : categoryData?.name;
 
-  // 3. Get the User's Email from Auth
+  const eventData: any = reg.events;
+  const eventName = Array.isArray(eventData)
+    ? eventData[0]?.name
+    : eventData?.name || "FYTRR RUN 2026";
+
+  // 4. Get User Email from Auth
   const { data: userData } = await supabaseAdmin.auth.admin.getUserById(
     reg.user_id
   );
 
-  // 4. Send Confirmation Email
+  // 5. Send Confirmation Email
   if (userData?.user?.email) {
     try {
-      // Format the BIB strings returned from the SQL function
+      // BIB format: Participant Name: BIB (e.g., Sultan: A-101)
       const bibString = bibData
         .map((b: any) => `<strong>${b.p_name}</strong>: ${b.p_bib}`)
         .join("<br/>");
@@ -61,14 +65,14 @@ export async function fulfillOrder(registrationId: string) {
       await sendRegistrationMail({
         to: userData.user.email,
         name: "Athlete",
-        event: "Fytrr Run 2026",
-        category: categoryName || "Registration",
+        event: eventName,
+        category: categoryName || "Race Category",
         bib: bibString,
       });
 
       console.log(`Success: Email sent to ${userData.user.email}`);
     } catch (mailErr) {
-      // We don't return false here because the DB is already updated
+      // DB update ho chuka hai, isliye email fail hone par bhi false return nahi karenge
       console.error("Email failed but DB is updated:", mailErr);
     }
   }
