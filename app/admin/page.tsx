@@ -32,7 +32,7 @@ export default async function AdminDashboard() {
     registrations (
       id,
       status,
-      participants (id, participant_name, bib_number),
+      participants (id, participant_name, bib_number, rank, finish_time),
       payments (amount, status)
     )
   `

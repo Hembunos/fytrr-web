@@ -9,10 +9,11 @@ export default function LoginClient() {
   const params = useSearchParams();
   const router = useRouter();
   const redirectTo = params.get("redirectTo") || "/dashboard";
-  const errorMsg = params.get("error"); // Capture errors from auth callback
+  const errorMsg = params.get("error");
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false); // Password Toggle state
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState<{
     type: "error" | "success";
@@ -36,31 +37,40 @@ export default function LoginClient() {
       return setStatus({ type: "error", msg: error.message });
     }
 
-    // Force refresh ensures Middleware and Navbar recognize the session
     router.refresh();
     window.location.replace(redirectTo);
   }
 
   return (
-    <div className="min-h-[80vh] flex flex-col items-center justify-center px-6">
-      <div className="w-full max-w-md p-10 space-y-8 bg-white shadow-2xl rounded-[2.5rem] border border-zinc-100">
+    <div className="relative min-h-[90vh] flex flex-col items-center justify-center px-6 overflow-hidden bg-white">
+      {/* 🏎️ UI Upgrade: Background Athletic Elements */}
+      <div className="absolute inset-0 z-0 opacity-[0.03] select-none pointer-events-none">
+        <div className="absolute top-10 -left-20 text-[20rem] font-black italic uppercase leading-none text-black">
+          PACE
+        </div>
+        <div className="absolute bottom-10 -right-20 text-[20rem] font-black italic uppercase leading-none text-black">
+          WIN
+        </div>
+      </div>
+
+      <div className="z-10 w-full max-w-md p-10 space-y-10 bg-white/80 backdrop-blur-xl shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] rounded-[3rem] border border-zinc-100">
         {/* Header Section */}
-        <div className="space-y-2 text-center">
-          <div className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">
-            Athlete Portal
+        <div className="space-y-3 text-center">
+          <div className="inline-block px-3 py-1 bg-zinc-100 rounded-full text-[9px] font-black uppercase tracking-[0.4em] text-zinc-500">
+            Secure Entry
           </div>
-          <h1 className="text-4xl font-black italic uppercase tracking-tighter">
-            Welcome <span className="text-zinc-400">Back</span>
+          <h1 className="text-5xl font-black italic uppercase tracking-tighter leading-none">
+            Welcome <span className="text-zinc-300">Back</span>
           </h1>
-          <p className="text-zinc-500 text-xs font-bold uppercase tracking-wide">
-            Access your BIB and race details
+          <p className="text-zinc-400 text-[10px] font-black uppercase tracking-widest">
+            Athlete Access Only
           </p>
         </div>
 
         {/* Inline Status Messages */}
         {status && (
           <div
-            className={`p-4 rounded-xl text-xs font-bold uppercase tracking-wider text-center ${
+            className={`p-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-center animate-in fade-in zoom-in duration-300 ${
               status.type === "error"
                 ? "bg-red-50 text-red-500 border border-red-100"
                 : "bg-green-50 text-green-600 border border-green-100"
@@ -70,39 +80,48 @@ export default function LoginClient() {
           </div>
         )}
 
-        <div className="space-y-4">
-          <div className="space-y-1">
-            <label className="text-[10px] uppercase font-bold text-zinc-400 ml-1">
+        <div className="space-y-6">
+          <div className="space-y-1.5 group">
+            <label className="text-[10px] uppercase font-black text-zinc-400 ml-2 tracking-widest group-focus-within:text-black transition-colors">
               Email Address
             </label>
             <input
               type="email"
-              className="w-full border-2 border-zinc-100 p-4 rounded-2xl focus:border-black outline-none transition-all font-bold placeholder:font-normal placeholder:text-zinc-200"
+              className="w-full border-2 border-zinc-50 p-5 rounded-[1.5rem] bg-zinc-50/50 focus:bg-white focus:border-black focus:ring-4 focus:ring-black/5 outline-none transition-all font-bold placeholder:font-normal placeholder:text-zinc-300 text-sm"
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="athlete@example.com"
+              placeholder="athlete@fytrr.in"
               required
               disabled={loading}
             />
           </div>
 
-          <div className="space-y-1">
-            <label className="text-[10px] uppercase font-bold text-zinc-400 ml-1">
+          <div className="space-y-1.5 group relative">
+            <label className="text-[10px] uppercase font-black text-zinc-400 ml-2 tracking-widest group-focus-within:text-black transition-colors">
               Password
             </label>
-            <input
-              type="password"
-              className="w-full border-2 border-zinc-100 p-4 rounded-2xl focus:border-black outline-none transition-all font-bold placeholder:font-normal placeholder:text-zinc-200"
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-              disabled={loading}
-            />
-            <div className="text-right px-1">
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                className="w-full border-2 border-zinc-50 p-5 rounded-[1.5rem] bg-zinc-50/50 focus:bg-white focus:border-black focus:ring-4 focus:ring-black/5 outline-none transition-all font-bold placeholder:font-normal placeholder:text-zinc-300 text-sm"
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+                required
+                disabled={loading}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-5 top-1/2 -translate-y-1/2 text-zinc-300 hover:text-black transition-colors"
+              >
+                {showPassword ? "🙈" : "👁️"}
+              </button>
+            </div>
+            <div className="text-right px-2">
               <Link
                 href="/forgot-password"
-                className="text-[10px] font-black uppercase tracking-widest text-zinc-400 hover:text-black transition-colors"
+                className="text-[9px] font-black uppercase tracking-[0.2em] text-zinc-400 hover:text-black transition-colors"
               >
-                Forgot password?
+                Reset Password
               </Link>
             </div>
           </div>
@@ -110,47 +129,45 @@ export default function LoginClient() {
           <button
             onClick={login}
             disabled={loading}
-            className="group relative w-full bg-black text-white p-5 rounded-2xl font-black uppercase tracking-[0.2em] text-sm hover:bg-zinc-800 disabled:opacity-50 transition-all active:scale-[0.98] shadow-xl shadow-zinc-100"
+            className="group relative w-full bg-black text-white p-6 rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-xs hover:bg-zinc-900 disabled:opacity-50 transition-all active:scale-[0.97] shadow-2xl shadow-zinc-200 overflow-hidden"
           >
-            <div className="flex items-center justify-center gap-3">
+            <div className="relative z-10 flex items-center justify-center gap-3">
               {loading ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                  Verifying...
+                  <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin" />
+                  Authenticating...
                 </>
               ) : (
                 <>
-                  Login to Dashboard
+                  Access Dashboard
                   <svg
-                    className="group-hover:translate-x-1 transition-transform"
-                    xmlns="http://www.w3.org/2000/svg"
+                    className="group-hover:translate-x-2 transition-transform duration-300"
                     width="18"
                     height="18"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
                   >
-                    <path d="M5 12h14" />
-                    <path d="m12 5 7 7-7 7" />
+                    <path d="M5 12h14M12 5l7 7-7 7" />
                   </svg>
                 </>
               )}
             </div>
+            {/* Hover Shine Effect */}
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
           </button>
         </div>
 
-        {/* Footer Links */}
-        <div className="pt-4 text-center">
-          <p className="text-xs text-zinc-500 font-bold uppercase tracking-tight">
-            New to FYTRR?{" "}
+        {/* Brand Footer */}
+        <div className="pt-6 text-center space-y-4">
+          <p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest">
+            Don't have an account?{" "}
             <Link
               href="/signup"
-              className="text-black border-b-2 border-black pb-0.5 hover:text-zinc-500 hover:border-zinc-500 transition-all ml-1"
+              className="text-black border-b-2 border-zinc-100 hover:border-black transition-all ml-1"
             >
-              Create Athlete Account
+              Join the Race
             </Link>
           </p>
         </div>

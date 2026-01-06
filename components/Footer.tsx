@@ -3,46 +3,61 @@
 import Link from "next/link";
 
 export default function Footer() {
+  const currentYear = new Date().getFullYear();
+
   return (
-    <footer className="bg-black text-white pt-20 pb-10 px-6 mt-auto">
-      <div className="max-w-7xl mx-auto space-y-12">
-        {/* Top Section */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
-          <div className="col-span-1 md:col-span-2 space-y-6">
-            <h2 className="text-3xl font-black italic tracking-tighter uppercase">
-              FYTRR <span className="text-zinc-500">RUN 2026</span>
+    <footer className="bg-brand-primary text-brand-secondary pt-24 pb-12 px-6 mt-auto border-t border-brand-muted">
+      <div className="max-w-7xl mx-auto space-y-16">
+        {/* Top Section: Branding and Navigation Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-8">
+          {/* Brand Info - Spans 2 columns on large screens */}
+          <div className="sm:col-span-2 space-y-6 text-center sm:text-left">
+            <h2 className="text-4xl font-black italic tracking-tighter uppercase leading-none">
+              FYTRR{" "}
+              <span className="text-brand-accent/50 underline decoration-brand-success decoration-4 underline-offset-8">
+                RUN 2026
+              </span>
             </h2>
-            <p className="text-zinc-400 text-sm max-w-sm leading-relaxed">
+            <p className="text-brand-accent text-xs md:text-sm max-w-sm leading-relaxed font-bold uppercase tracking-tight mx-auto sm:mx-0">
               Pushing limits in the heart of Dumka. Join the ultimate
               Hyrox-inspired challenge and claim your place in the hall of fame.
             </p>
           </div>
 
-          <div className="space-y-4">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">
-              Navigation
+          {/* Navigation Links */}
+          <div className="space-y-6 text-center sm:text-left">
+            <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-accent/60">
+              Sitemap
             </h4>
-            <ul className="space-y-2 text-sm font-bold uppercase tracking-tight">
+            <ul className="space-y-4 text-xs font-black uppercase tracking-widest">
               <li>
                 <Link
                   href="/"
-                  className="hover:text-zinc-400 transition-colors"
+                  className="hover:text-brand-success transition-colors"
                 >
                   Home
                 </Link>
               </li>
               <li>
                 <Link
-                  href="/past-events"
-                  className="hover:text-zinc-400 transition-colors"
+                  href="/gallery"
+                  className="hover:text-brand-success transition-colors"
                 >
-                  Past Events
+                  Gallery
+                </Link>
+              </li>
+              <li>
+                <Link
+                  href="/format"
+                  className="hover:text-brand-success transition-colors"
+                >
+                  Race Format
                 </Link>
               </li>
               <li>
                 <Link
                   href="/dashboard"
-                  className="hover:text-zinc-400 transition-colors"
+                  className="hover:text-brand-success transition-colors"
                 >
                   Dashboard
                 </Link>
@@ -50,52 +65,62 @@ export default function Footer() {
             </ul>
           </div>
 
-          <div className="space-y-4">
-            <h4 className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-500">
-              Legal
+          {/* Legal Links */}
+          <div className="space-y-6 text-center sm:text-left">
+            <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-accent/60">
+              Protocol
             </h4>
-            <ul className="space-y-2 text-sm font-bold uppercase tracking-tight">
+            <ul className="space-y-4 text-xs font-black uppercase tracking-widest">
               <li>
                 <Link
                   href="/terms"
-                  className="hover:text-zinc-400 transition-colors"
+                  className="hover:text-brand-success transition-colors"
                 >
-                  Terms & Conditions
+                  Terms
                 </Link>
               </li>
               <li>
                 <Link
                   href="/privacy"
-                  className="hover:text-zinc-400 transition-colors"
+                  className="hover:text-brand-success transition-colors"
                 >
-                  Privacy Policy
+                  Privacy
                 </Link>
               </li>
               <li>
                 <Link
                   href="/refund"
-                  className="hover:text-zinc-400 transition-colors"
+                  className="hover:text-brand-success transition-colors"
                 >
-                  Refund Policy
+                  Refunds
                 </Link>
               </li>
             </ul>
           </div>
         </div>
 
-        {/* Bottom Section */}
-        <div className="pt-10 border-t border-zinc-900 flex flex-col md:flex-row justify-between items-center gap-6">
-          <p className="text-[10px] uppercase tracking-widest text-zinc-600">
-            © 2026 FYTRR ORG. All Rights Reserved.
-          </p>
-          <div className="flex gap-4">
-            {/* Social Icons Placeholder */}
-            <div className="h-8 w-8 rounded-full bg-zinc-900 flex items-center justify-center hover:bg-zinc-800 cursor-pointer transition-colors">
-              <span className="text-[10px]">IG</span>
+        {/* Bottom Section: Copyright and Socials */}
+        <div className="pt-10 border-t border-brand-muted flex flex-col md:flex-row justify-between items-center gap-8">
+          <div className="order-2 md:order-1 text-center md:text-left">
+            <p className="text-[9px] uppercase font-black tracking-[0.5em] text-brand-accent/40">
+              © {currentYear} FYTRR ORG • BEYOND LIMITS • DUMKA, JH
+            </p>
+          </div>
+
+          <div className="flex items-center gap-4 order-1 md:order-2">
+            {/* Social Icons with brand-radius */}
+            <div className="h-12 w-12 rounded-race bg-brand-muted flex items-center justify-center hover:bg-brand-success hover:text-brand-primary transition-all cursor-pointer group shadow-xl">
+              <span className="text-xs font-black italic">IG</span>
             </div>
-            <div className="h-8 w-8 rounded-full bg-zinc-900 flex items-center justify-center hover:bg-zinc-800 cursor-pointer transition-colors">
-              <span className="text-[10px]">TW</span>
+            <div className="h-12 w-12 rounded-race bg-brand-muted flex items-center justify-center hover:bg-brand-success hover:text-brand-primary transition-all cursor-pointer group shadow-xl">
+              <span className="text-xs font-black italic">TW</span>
             </div>
+            <Link
+              href="/signup"
+              className="bg-brand-secondary text-brand-primary px-6 py-3 rounded-race text-[10px] font-black uppercase tracking-widest hover:bg-brand-success hover:text-brand-primary transition-all shadow-lg"
+            >
+              Join Now
+            </Link>
           </div>
         </div>
       </div>

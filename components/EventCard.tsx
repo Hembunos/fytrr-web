@@ -15,26 +15,28 @@ interface EventCardProps {
 
 export default function EventCard({ event }: EventCardProps) {
   return (
-    <div className="group relative bg-white border border-zinc-200 rounded-[2rem] overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-2">
-      {/* Decorative Accent */}
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-zinc-200 to-transparent group-hover:via-black transition-all duration-500" />
+    <div className="group relative bg-white border border-zinc-100 rounded-[2.5rem] overflow-hidden transition-all duration-700 hover:shadow-[0_30px_60px_-15px_rgba(0,0,0,0.1)] hover:-translate-y-3">
+      {/* ⚡ High-Impact Top Accent */}
+      <div className="absolute top-0 left-0 w-full h-1.5 bg-zinc-100 overflow-hidden">
+        <div className="w-full h-full bg-black translate-x-[-100%] group-hover:translate-x-0 transition-transform duration-700 ease-in-out" />
+      </div>
 
-      <div className="p-8 space-y-6">
-        {/* Date & Location */}
+      <div className="p-10 space-y-8">
+        {/* Date, Location & Status Badge */}
         <div className="flex justify-between items-start">
-          <div className="space-y-1">
-            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-400">
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-zinc-300 group-hover:text-black transition-colors duration-500">
               {new Date(event.event_date).toLocaleDateString("en-US", {
                 month: "long",
                 day: "numeric",
                 year: "numeric",
               })}
             </p>
-            <p className="text-xs font-bold text-zinc-500 uppercase flex items-center gap-1">
+            <p className="text-[11px] font-black text-zinc-500 uppercase flex items-center gap-1.5 italic">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
-                width="12"
-                height="12"
+                width="14"
+                height="14"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -49,22 +51,21 @@ export default function EventCard({ event }: EventCardProps) {
             </p>
           </div>
 
-          {/* Status Badge */}
           <span
-            className={`px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest ${
+            className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-[0.2em] transition-all duration-500 ${
               event.is_active
-                ? "bg-green-100 text-green-700"
-                : "bg-zinc-100 text-zinc-500"
+                ? "bg-green-50 text-green-600 border border-green-100 group-hover:bg-green-500 group-hover:text-white"
+                : "bg-zinc-50 text-zinc-400 border border-zinc-100"
             }`}
           >
-            {event.is_active ? "Live" : "Past"}
+            {event.is_active ? "Registration Open" : "Event Closed"}
           </span>
         </div>
 
-        {/* Event Name */}
-        <h3 className="text-3xl font-black italic uppercase tracking-tighter leading-tight text-black">
+        {/* Event Name - Bold Athletic Typography */}
+        <h3 className="text-4xl font-black italic uppercase tracking-tighter leading-[0.9] text-black transition-all duration-500 group-hover:tracking-tight">
           {event.name.split(" ").map((word, i) => (
-            <span key={i} className={i % 2 !== 0 ? "text-zinc-400" : ""}>
+            <span key={i} className={i % 2 !== 0 ? "text-zinc-200" : ""}>
               {word}{" "}
             </span>
           ))}
@@ -75,13 +76,14 @@ export default function EventCard({ event }: EventCardProps) {
           {event.is_active ? (
             <Link
               href={`/event/${event.slug}`}
-              className="flex items-center justify-center gap-2 w-full bg-black text-white py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-zinc-800 transition-all active:scale-[0.98]"
+              className="group/btn relative flex items-center justify-center gap-3 w-full bg-black text-white py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-xs overflow-hidden transition-all active:scale-[0.96]"
             >
-              Register Now
+              <span className="relative z-10">Register For Race</span>
               <svg
+                className="relative z-10 group-hover/btn:translate-x-2 transition-transform duration-300"
                 xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
+                width="20"
+                height="20"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -92,13 +94,15 @@ export default function EventCard({ event }: EventCardProps) {
                 <path d="M5 12h14" />
                 <path d="m12 5 7 7-7 7" />
               </svg>
+              {/* Button Shine Effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent translate-x-[-100%] group-hover/btn:translate-x-[100%] transition-transform duration-1000" />
             </Link>
           ) : (
             <Link
-              href={`/results/${event.slug}`}
-              className="flex items-center justify-center gap-2 w-full border-2 border-black text-black py-4 rounded-2xl font-black uppercase tracking-widest hover:bg-black hover:text-white transition-all active:scale-[0.98]"
+              href={`/event/${event.slug}/results`}
+              className="flex items-center justify-center gap-2 w-full border-2 border-zinc-900 text-black py-5 rounded-[1.5rem] font-black uppercase tracking-widest text-xs hover:bg-black hover:text-white transition-all duration-500 active:scale-[0.96]"
             >
-              View Results
+              View Official Results
             </Link>
           )}
         </div>
