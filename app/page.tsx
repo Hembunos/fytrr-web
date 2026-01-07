@@ -64,7 +64,7 @@ export default async function LandingPage() {
         id="active-races"
         className="relative py-24 md:py-40 bg-black overflow-hidden"
       >
-        {/* Background Decorative Text - Synced with Portal Vibe */}
+        {/* Background Decorative Text */}
         <div className="absolute top-20 left-0 w-full opacity-[0.02] select-none pointer-events-none flex justify-center">
           <div className="text-[15rem] md:text-[30rem] font-black italic uppercase text-white tracking-tighter -rotate-6">
             BATTLE
@@ -72,26 +72,50 @@ export default async function LandingPage() {
         </div>
 
         <div className="max-w-7xl mx-auto px-6 relative z-10">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-24 gap-10">
-            <div className="space-y-6">
-              <div className="flex items-center gap-4">
+          {/* HEADER */}
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-24 gap-10 text-center md:text-left">
+            <div className="space-y-6 mx-auto md:mx-0">
+              {/* LIVE EVENTS */}
+              <div className="flex items-center gap-4 justify-center md:justify-start">
                 <div className="h-1 w-16 bg-brand-success shadow-[0_0_15px_rgba(34,197,94,0.4)]" />
                 <span className="text-brand-success font-black uppercase tracking-[0.5em] text-[10px]">
                   Live Events
                 </span>
               </div>
+
+              {/* TITLE */}
               <h2 className="text-6xl md:text-9xl font-black italic uppercase tracking-tighter text-white leading-[0.8]">
                 ACTIVE <span className="text-white/10">RACES</span>
               </h2>
-              <p className="text-white/30 uppercase font-black tracking-[0.3em] text-[10px] md:text-xs max-w-sm border-l-2 border-brand-success pl-5 leading-relaxed italic">
+
+              {/* SUBTEXT */}
+              <p
+                className="
+            text-white/30 uppercase font-black tracking-[0.3em]
+            text-[10px] md:text-xs max-w-sm
+            mx-auto md:mx-0
+            border-l-0 md:border-l-2
+            md:border-brand-success
+            md:pl-5
+            leading-relaxed italic
+          "
+              >
                 Pick your challenge and claim your official BIB for the upcoming
                 season
               </p>
             </div>
 
+            {/* HISTORY LINK */}
             <Link
               href="/past-events"
-              className="group flex items-center gap-4 text-[10px] font-black uppercase text-white/40 hover:text-brand-success transition-all italic border-b border-white/5 pb-3 tracking-widest"
+              className="
+          group flex items-center gap-4
+          justify-center md:justify-start
+          text-[10px] font-black uppercase
+          text-white/40 hover:text-brand-success
+          transition-all italic
+          border-b border-white/5 pb-3 tracking-widest
+        "
             >
               View Event History
               <svg
@@ -108,7 +132,7 @@ export default async function LandingPage() {
             </Link>
           </div>
 
-          {/* Grid with Overlap Correction */}
+          {/* EVENTS GRID */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-14 items-stretch relative z-20">
             {activeEvents && activeEvents.length > 0 ? (
               activeEvents.map((event) => (
@@ -116,7 +140,6 @@ export default async function LandingPage() {
                   key={event.id}
                   className="group transition-transform duration-500 hover:-translate-y-2"
                 >
-                  {/* EventCard White Theme matches Dashboard Card Style */}
                   <EventCard event={event} />
                 </div>
               ))
@@ -154,8 +177,12 @@ export default async function LandingPage() {
                 {/* BIG NUMBER */}
                 <span
                   className="
-              absolute bottom-10 left-0
-              text-[12rem]
+              absolute bottom-10
+              left-1/2 -translate-x-1/2          /* 📱 mobile center */
+              md:left-0 md:translate-x-0        /* 🖥 desktop left */
+
+              text-[7rem] sm:text-[9rem] md:text-[12rem]  /* responsive size */
+
               font-black italic
               leading-none
               select-none
@@ -169,7 +196,10 @@ export default async function LandingPage() {
                 {/* GREEN LINE */}
                 <div
                   className="
-              absolute bottom-0 left-0
+              absolute bottom-0
+              left-1/2 -translate-x-1/2          /* 📱 mobile center */
+              md:left-0 md:translate-x-0        /* 🖥 desktop left */
+
               h-1.5 w-16 bg-brand-success
               group-hover:w-24 transition-all duration-700
               shadow-[0_0_15px_rgba(34,197,94,0.3)]
@@ -178,11 +208,11 @@ export default async function LandingPage() {
               </div>
 
               {/* TEXT */}
-              <div className="space-y-4">
+              <div className="space-y-4 text-center md:text-left">
                 <h3 className="font-black italic text-4xl uppercase tracking-tighter text-white">
                   {f.title}
                 </h3>
-                <p className="text-[10px] md:text-xs text-white/30 font-black leading-relaxed uppercase tracking-[0.3em] max-w-xs italic">
+                <p className="text-[10px] md:text-xs text-white/30 font-black leading-relaxed uppercase tracking-[0.3em] max-w-xs italic mx-auto md:mx-0">
                   {f.desc}
                 </p>
               </div>
