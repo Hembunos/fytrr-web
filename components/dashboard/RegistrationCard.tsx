@@ -4,14 +4,18 @@ interface RegistrationCardProps {
   reg: {
     id: string;
     status: string;
-    events: {
-      name: string;
-      slug: string;
-    } | null;
-    categories: {
-      name: string;
-      price: number;
-    } | null;
+    events:
+      | {
+          name: string;
+          slug: string;
+        }[]
+      | null; // 👈 array
+    categories:
+      | {
+          name: string;
+          price: number;
+        }[]
+      | null; // 👈 array
     participants: {
       id: string;
       participant_name: string;
@@ -20,11 +24,13 @@ interface RegistrationCardProps {
   };
 }
 
+
 export const RegistrationCard = ({ reg }: RegistrationCardProps) => {
   const isPaid = reg.status === "paid";
 
-  const event = reg.events;
-  const category = reg.categories;
+  const event = reg.events?.[0] ?? null;
+  const category = reg.categories?.[0] ?? null;
+
 
   const unitPrice = category?.price ?? 0;
   const participantCount = reg.participants?.length || 1;
