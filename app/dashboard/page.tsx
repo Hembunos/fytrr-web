@@ -111,9 +111,6 @@ export default async function DashboardPage() {
         <SuccessToast />
       </Suspense>
       {/* ⬛ HERO SECTION */}
-
-      {/* ⬛ HERO SECTION */}
-      {/* ⬛ HERO SECTION */}
       <div
         className="
     relative w-full
