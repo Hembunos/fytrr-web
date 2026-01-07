@@ -7,7 +7,8 @@ import { RegistrationCard } from "@/components/dashboard/RegistrationCard";
 import { EmptyTrackView } from "@/components/dashboard/EmptyTrackView";
 import { LayoutDashboard } from "lucide-react";
 
-// 1. Updated Interface: Events must be an array to match Supabase join logic
+/* 🔹 1. CORRECTED INTERFACE */
+// This matches exactly what Supabase returns for joined tables
 interface Registration {
   id: string;
   status: string;
@@ -15,12 +16,12 @@ interface Registration {
   events: {
     name: string;
     slug: string;
-  }[]; // Relationship queries in Supabase always return arrays
+  }[];
   categories: {
     name: string;
     price: number;
     bib_prefix: string;
-  };
+  }[];
   participants: {
     id: string;
     participant_name: string;
@@ -49,7 +50,7 @@ export default async function DashboardPage() {
   const isAdmin = profile?.role === "admin";
 
   /* 📦 FETCH REGISTRATIONS */
-  const { data: registrations, error } = await supabase
+  const { data, error } = await supabase
     .from("registrations")
     .select(
       `
@@ -71,6 +72,10 @@ export default async function DashboardPage() {
     )
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
+
+  // 🔹 2. TYPE ASSERTION
+  // This links the fetched data to our interface
+  const registrations = data as unknown as Registration[] | null;
 
   if (error) {
     return (
@@ -97,7 +102,6 @@ export default async function DashboardPage() {
         <SuccessToast />
       </Suspense>
 
-      {/* ⬛ HERO SECTION */}
       <div className="relative w-full h-[360px] md:h-[420px] bg-[#050505] flex items-end pb-12 md:pb-16 overflow-hidden border-b border-white/5">
         <div className="absolute inset-0 opacity-[0.02] select-none pointer-events-none flex items-center justify-center">
           <div className="text-[18rem] md:text-[30rem] font-black italic uppercase leading-none text-white tracking-tighter -rotate-6">
@@ -116,7 +120,6 @@ export default async function DashboardPage() {
                   FYTRR Protocol v1.0
                 </span>
               </div>
-
               <h1 className="text-7xl md:text-9xl font-black italic uppercase tracking-tighter leading-[0.8] text-white">
                 MY <br />
                 <span
@@ -129,7 +132,6 @@ export default async function DashboardPage() {
                   TRACK
                 </span>
               </h1>
-
               <p className="text-brand-success/60 text-xs font-black uppercase tracking-[0.4em] max-w-sm border-l-2 border-brand-success pl-6 italic">
                 Performance Intelligence & <br /> Race Identity Management
               </p>
@@ -153,7 +155,6 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* 🏁 CONTENT OVERLAY */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 -mt-10 md:-mt-12 space-y-16">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
           <div className="bg-white p-10 rounded-[2.5rem] shadow-[0_40px_80px_rgba(0,0,0,0.4)] transform hover:-translate-y-2 transition-all duration-500 group">
@@ -190,7 +191,6 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* 📋 Registration List Section */}
         <div className="space-y-12 animate-in fade-in slide-in-from-top-12 duration-1000">
           <div className="flex items-center justify-between border-b-2 border-white/5 pb-10">
             <h2 className="text-4xl font-black italic uppercase tracking-tighter text-white">
@@ -208,8 +208,8 @@ export default async function DashboardPage() {
             <EmptyTrackView />
           ) : (
             <div className="grid grid-cols-1 gap-12">
-              {/* Using explicit casting here matches the component props for the build */}
-              {registrations.map((reg: any) => (
+              {/* 🔹 3. NO MORE 'ANY' */}
+              {registrations.map((reg) => (
                 <RegistrationCard key={reg.id} reg={reg} />
               ))}
             </div>
