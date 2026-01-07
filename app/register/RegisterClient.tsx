@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { toast, Toaster } from "sonner";
 
 export default function RegisterClient() {
   const params = useSearchParams();
@@ -26,15 +27,9 @@ export default function RegisterClient() {
     }
 
     const initData = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        router.replace(
-          `/login?redirectTo=${encodeURIComponent(
-            `/register?category=${categoryId}`
-          )}`
-        );
+        router.replace(`/login?redirectTo=${encodeURIComponent(`/register?category=${categoryId}`)}`);
         return;
       }
       setUserId(user.id);
@@ -59,18 +54,20 @@ export default function RegisterClient() {
 
   /* ───────── 2. REGISTRATION HANDLER ───────── */
   async function handleRegister() {
-    // PREVENT DOUBLE CLICK: Immediate exit if already loading
     if (!userId || !categoryData || loading) return;
 
     if (cleanedNames.length === 0) {
-      alert("Please add at least one participant name.");
+      toast.error("Athlete ka naam likhna zaroori hai! 🏃‍♂️", {
+        description: "Kam se kam ek naam add karein.",
+        style: { background: "#000", color: "#fff", border: "1px solid #22c55e" },
+      });
       return;
     }
 
     setLoading(true);
+    const loadingToast = toast.loading("Details save ho rahi hain...");
 
     try {
-      // 1. Create Pending Registration
       const { data: registration, error: regError } = await supabase
         .from("registrations")
         .insert({
@@ -82,10 +79,8 @@ export default function RegisterClient() {
         .select()
         .single();
 
-      if (regError || !registration)
-        throw new Error("Could not initialize registration.");
+      if (regError || !registration) throw new Error("Could not initialize registration.");
 
-      // 2. Add Participants to the database
       const { error: partError } = await supabase.from("participants").insert(
         cleanedNames.map((name) => ({
           registration_id: registration.id,
@@ -95,188 +90,192 @@ export default function RegisterClient() {
 
       if (partError) throw new Error("Failed to save participant details.");
 
-      // 3. Trigger Razorpay Checkout
-      // Importing handlePayment dynamically to keep the initial bundle small
-      const { handlePayment } = await import("@/lib/checkout");
+      toast.success("Ready for Battle! 🏁", {
+        description: "Redirecting to Payment Gateway...",
+        id: loadingToast,
+      });
 
-      // Pass a callback to reset loading if the user cancels the popup
+      const { handlePayment } = await import("@/lib/checkout");
       await handlePayment(registration.id, () => setLoading(false));
     } catch (err: any) {
       console.error(err);
-      alert(err.message || "An unexpected error occurred. Please try again.");
-      setLoading(false); // Reset loading so they can try again
+      toast.error("Registration Failed", {
+        description: err.message || "Kuch gadbad ho gayi, firse try karo.",
+        id: loadingToast,
+      });
+      setLoading(false);
     }
   }
 
   return (
-    <div className="p-8 max-w-md mx-auto space-y-8 bg-white shadow-2xl rounded-[2.5rem] border border-zinc-100 mt-10 mb-20">
-      {/* Header Section */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.3em] text-zinc-400">
-          <span className="px-2 py-0.5 bg-zinc-100 rounded italic">
-            Step 02
-          </span>
-          <span>•</span>
-          <span>Athlete Details</span>
+    <div className="relative min-h-screen bg-black selection:bg-brand-success selection:text-black overflow-x-hidden">
+      <Toaster position="bottom-center" offset={40} richColors />
+
+      {/* ⬛ Stealth Header Strip: Bottom Aligned */}
+      <div className="relative w-full h-[350px] md:h-[450px] bg-[#050505] flex items-end pb-16 md:pb-24 overflow-hidden border-b border-white/5">
+        {/* Background Giant Text */}
+        <div className="absolute inset-0 opacity-[0.03] select-none pointer-events-none flex items-center justify-center">
+          <div className="text-[18rem] md:text-[30rem] font-black italic uppercase leading-none text-white tracking-tighter -rotate-6">
+            {categoryData?.name?.split(" ")[0] || "GO"}
+          </div>
         </div>
-        <h1 className="text-4xl font-black italic uppercase tracking-tighter">
-          {categoryData?.name || "Register"}
-        </h1>
-        <p className="text-zinc-500 text-xs font-medium uppercase tracking-wide">
-          Enter names exactly as they should appear on the BIB
-        </p>
+
+        <div className="max-w-7xl mx-auto w-full px-6 md:px-12 relative z-10">
+          <div className="max-w-4xl space-y-6">
+            <div className="flex items-center gap-4">
+              <span className="px-4 py-1.5 bg-brand-success text-black rounded-full italic text-[10px] font-black uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(34,197,94,0.3)] animate-pulse">
+                ● Official Entry
+              </span>
+              <span className="text-white/20 font-black uppercase tracking-[0.5em] text-[10px] italic border-l border-white/10 pl-4">
+                Protocol v1.0
+              </span>
+            </div>
+
+            <h1 className="text-6xl md:text-[9rem] font-black italic uppercase tracking-tighter leading-[0.8] text-white animate-in fade-in slide-in-from-left-8 duration-700">
+              {categoryData?.name || "Register"}
+            </h1>
+          </div>
+        </div>
       </div>
 
-      {/* Athlete Inputs */}
-      <div className="space-y-4">
-        {participants.map((name, index) => (
-          <div key={index} className="group relative flex flex-col gap-1">
-            <label className="text-[10px] uppercase font-bold text-zinc-400 ml-1">
-              Athlete {index + 1}
-            </label>
-            <div className="flex gap-3">
-              <div className="relative flex-1">
-                <input
-                  className="w-full border-2 border-zinc-100 rounded-2xl p-4 focus:border-black outline-none transition-all disabled:bg-zinc-50 font-bold placeholder:font-normal placeholder:text-zinc-300"
-                  placeholder="Full Name"
-                  value={name}
-                  disabled={loading}
-                  onChange={(e) => {
-                    const updated = [...participants];
-                    updated[index] = e.target.value;
-                    setParticipants(updated);
-                  }}
-                />
+      {/* 🏁 Floating Registration Card: Optimized Spacing */}
+      <div className="relative z-20 flex flex-col items-center px-4 md:px-6 -mt-10 md:-mt-16 pb-24">
+        <div className="w-full max-w-lg p-6 md:p-12 space-y-10 md:space-y-12 bg-white shadow-[0_50px_100px_rgba(0,0,0,0.6)] rounded-[2.5rem] border-t-[8px] border-black animate-in fade-in slide-in-from-bottom-12 duration-1000">
+          {/* Step Indicator Header */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3 text-[10px] font-black uppercase tracking-[0.4em] text-black/40 italic">
+              <span className="px-3 py-1 bg-black text-white rounded italic">
+                Step 02
+              </span>
+              <span>•</span>
+              <span className="text-brand-success font-black uppercase tracking-widest">
+                Athlete Details
+              </span>
+            </div>
+            <p className="text-black/60 text-[11px] font-black uppercase tracking-widest leading-relaxed border-l-2 border-black/10 pl-4 italic">
+              Enter names exactly as they should appear on the official BIB
+            </p>
+          </div>
+
+          {/* Athlete Inputs Section */}
+          <div className="space-y-6 md:space-y-8">
+            {participants.map((name, index) => (
+              <div key={index} className="group relative flex flex-col gap-3">
+                <label className="text-[9px] uppercase font-black text-black/30 ml-2 tracking-widest group-focus-within:text-black transition-colors">
+                  Athlete {index + 1}
+                </label>
+                <div className="flex gap-2 md:gap-4">
+                  <div className="relative flex-1">
+                    <input
+                      className="w-full border-2 border-black/[0.05] rounded-2xl p-4 md:p-5 bg-[#fcfcfc] text-black focus:bg-white focus:border-black focus:ring-8 focus:ring-black/5 outline-none transition-all disabled:opacity-50 font-black italic uppercase text-sm shadow-sm placeholder:text-black/20"
+                      placeholder="Full Name"
+                      value={name}
+                      disabled={loading}
+                      onChange={(e) => {
+                        const updated = [...participants];
+                        updated[index] = e.target.value;
+                        setParticipants(updated);
+                      }}
+                    />
+                  </div>
+                  {participants.length > 1 && !loading && (
+                    <button
+                      onClick={() =>
+                        setParticipants(
+                          participants.filter((_, i) => i !== index)
+                        )
+                      }
+                      className="bg-red-50 text-red-500 px-4 md:px-6 rounded-2xl hover:bg-black hover:text-white transition-all active:scale-90 border border-red-100"
+                    >
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="4"
+                      >
+                        <path d="M18 6L6 18M6 6l12 12" />
+                      </svg>
+                    </button>
+                  )}
+                </div>
               </div>
-              {participants.length > 1 && !loading && (
-                <button
-                  onClick={() =>
-                    setParticipants(participants.filter((_, i) => i !== index))
-                  }
-                  className="bg-red-50 text-red-500 px-4 rounded-2xl hover:bg-red-500 hover:text-white transition-all group-hover:opacity-100 md:opacity-0"
-                  title="Remove Athlete"
-                >
+            ))}
+
+            {!loading && (
+              <button
+                type="button"
+                className="flex items-center gap-3 px-2 text-[10px] font-black uppercase tracking-[0.3em] text-black/40 hover:text-black transition-colors py-2 group"
+                onClick={() => setParticipants([...participants, ""])}
+              >
+                <div className="h-10 w-10 rounded-full bg-black/5 flex items-center justify-center group-hover:bg-black group-hover:text-white transition-all shadow-sm">
                   <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    width="18"
-                    height="18"
+                    width="16"
+                    height="16"
                     viewBox="0 0 24 24"
                     fill="none"
                     stroke="currentColor"
-                    strokeWidth="3"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                    strokeWidth="5"
                   >
-                    <path d="M18 6 6 18" />
-                    <path d="m6 6 12 12" />
+                    <path d="M12 5v14M5 12h14" />
                   </svg>
-                </button>
-              )}
+                </div>
+                Add Athlete
+              </button>
+            )}
+          </div>
+
+          {/* Black Card: Price Summary */}
+          <div className="bg-black text-white p-6 md:p-8 rounded-[2rem] shadow-2xl space-y-5 transform hover:scale-[1.01] transition-transform">
+            <div className="flex justify-between text-[9px] uppercase font-black tracking-[0.4em] opacity-40">
+              <span>Entry Summary</span>
+              <span>Subtotal</span>
+            </div>
+            <div className="h-[1px] bg-white/10" />
+            <div className="flex justify-between items-center gap-4">
+              <div className="space-y-1">
+                <p className="text-xl md:text-2xl font-black uppercase italic tracking-tighter truncate max-w-[150px] md:max-w-none">
+                  {categoryData?.name}
+                </p>
+                <p className="text-[10px] font-black opacity-30 uppercase tracking-widest">
+                  {cleanedNames.length} Registered Athlete(s)
+                </p>
+              </div>
+              <span className="text-3xl md:text-5xl font-black italic tracking-tighter text-brand-success">
+                ₹{totalAmount}
+              </span>
             </div>
           </div>
-        ))}
 
-        {!loading && (
+          {/* Action Button */}
           <button
-            type="button"
-            className="flex items-center gap-2 px-2 text-xs font-black uppercase tracking-widest text-zinc-500 hover:text-black transition-colors py-2"
-            onClick={() => setParticipants([...participants, ""])}
+            className={`group relative p-5 md:p-6 rounded-2xl w-full font-black uppercase tracking-[0.4em] text-[10px] md:text-xs transition-all shadow-xl
+          ${
+            loading || participants.filter((n) => n.trim() !== "").length === 0
+              ? "bg-black/60 text-white/50 cursor-not-allowed"
+              : "bg-black text-white hover:bg-brand-success hover:text-black active:scale-[0.98]"
+          }`}
+            disabled={loading}
+            onClick={handleRegister}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M5 12h14" />
-              <path d="M12 5v14" />
-            </svg>
-            Add Another Athlete
-          </button>
-        )}
-      </div>
-
-      {/* Price Breakdown Card */}
-      <div className="bg-zinc-900 text-white p-6 rounded-[2rem] shadow-xl space-y-3">
-        <div className="flex justify-between text-[10px] uppercase font-black tracking-widest text-zinc-500">
-          <span>Description</span>
-          <span>Amount</span>
-        </div>
-        <div className="h-[1px] bg-zinc-800" />
-        <div className="flex justify-between items-center">
-          <div className="space-y-0.5">
-            <p className="text-sm font-bold uppercase tracking-tight italic">
-              {categoryData?.name || "Entry Fee"}
-            </p>
-            <p className="text-[10px] text-zinc-500">
-              x{cleanedNames.length} Participant(s)
-            </p>
-          </div>
-          <span className="text-2xl font-black italic tracking-tighter">
-            ₹{totalAmount}
-          </span>
-        </div>
-      </div>
-
-      {/* Action Button */}
-      <div className="space-y-4">
-        <button
-          className="group relative bg-black text-white p-5 rounded-2xl w-full font-black uppercase tracking-[0.2em] text-sm hover:bg-zinc-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all active:scale-[0.98] overflow-hidden"
-          disabled={loading || cleanedNames.length === 0}
-          onClick={handleRegister}
-        >
-          <div className="relative z-10 flex items-center justify-center gap-3">
-            {loading ? (
-              <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Processing Securely...
-              </>
-            ) : (
-              <>
-                Pay Now
+            <div className="relative z-10 flex items-center justify-center gap-3">
+              {loading ? "Securing Spot..." : "Proceed to Payment"}
+              {!loading && (
                 <svg
-                  className="group-hover:translate-x-1 transition-transform"
-                  xmlns="http://www.w3.org/2000/svg"
+                  className="group-hover:translate-x-2 transition-transform duration-300"
                   width="18"
                   height="18"
                   viewBox="0 0 24 24"
                   fill="none"
                   stroke="currentColor"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+                  strokeWidth="4"
                 >
-                  <path d="M5 12h14" />
-                  <path d="m12 5 7 7-7 7" />
+                  <path d="M5 12h14M12 5l7 7-7 7" />
                 </svg>
-              </>
-            )}
-          </div>
-        </button>
-
-        <div className="flex items-center justify-center gap-2">
-          <svg
-            className="text-green-500"
-            xmlns="http://www.w3.org/2000/svg"
-            width="12"
-            height="12"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="4"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
-          </svg>
-          <p className="text-[9px] uppercase font-bold text-zinc-400 tracking-widest">
-            Secure Razorpay Encrypted Checkout
-          </p>
+              )}
+            </div>
+          </button>
         </div>
       </div>
     </div>

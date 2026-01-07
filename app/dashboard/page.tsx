@@ -3,17 +3,29 @@ import { createSupabaseServer } from "@/lib/supabase/server";
 import { Suspense } from "react";
 import SuccessToast from "@/components/SuccessToast";
 import Link from "next/link";
+import { RegistrationCard } from "@/components/dashboard/RegistrationCard";
+import { EmptyTrackView } from "@/components/dashboard/EmptyTrackView";
+import { LayoutDashboard } from "lucide-react";
 
 export default async function DashboardPage() {
   const supabase = await createSupabaseServer();
 
-  /* 🔐 AUTH CHECK (Server Side) */
+  /* 🔐 AUTH CHECK */
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) {
     redirect("/login?redirectTo=/dashboard");
   }
+
+  /* 👮 JWT ROLE CHECK - Forced Logic */
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .single();
+
+  const isAdmin = profile?.role === "admin";
 
   /* 📦 FETCH REGISTRATIONS */
   const { data: registrations, error } = await supabase
@@ -41,16 +53,16 @@ export default async function DashboardPage() {
 
   if (error) {
     return (
-      <div className="p-12 text-center space-y-4">
-        <p className="text-red-500 font-black uppercase italic">
-          Error loading data
+      <div className="min-h-[60vh] bg-black flex flex-col items-center justify-center p-12 text-center space-y-6">
+        <p className="text-brand-danger font-black uppercase italic text-xl tracking-tighter">
+          System Sync Error
         </p>
-        <button
-          onClick={() => window.location.reload()}
-          className="text-xs font-bold underline"
+        <Link
+          href="/dashboard"
+          className="text-[10px] text-white font-black uppercase border-b-2 border-brand-success pb-1"
         >
-          Try Again
-        </button>
+          Refresh Dashboard
+        </Link>
       </div>
     );
   }
@@ -59,185 +71,137 @@ export default async function DashboardPage() {
     registrations?.filter((r) => r.status === "paid").length || 0;
 
   return (
-    <div className="p-6 max-w-5xl mx-auto space-y-12 mb-20">
+    <div className="relative min-h-screen bg-black pb-24 font-sans selection:bg-brand-success selection:text-black overflow-x-hidden">
       <Suspense fallback={null}>
         <SuccessToast />
       </Suspense>
 
-      {/* Header & Stats Summary */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
-        <div className="space-y-2">
-          <h1 className="text-5xl md:text-6xl font-black italic uppercase tracking-tighter">
-            Athlete <span className="text-zinc-300">Hub</span>
-          </h1>
-          <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.4em]">
-            Manage your race identity
-          </p>
+      {/* ⬛ HERO SECTION - Bottom Aligned with Base Padding */}
+      <div className="relative w-full h-[360px] md:h-[420px] bg-[#050505] flex items-end pb-12 md:pb-16 overflow-hidden border-b border-white/5">
+        {/* Background Giant Text */}
+        <div className="absolute inset-0 opacity-[0.02] select-none pointer-events-none flex items-center justify-center">
+          <div className="text-[18rem] md:text-[30rem] font-black italic uppercase leading-none text-white tracking-tighter -rotate-6">
+            ATHLETE
+          </div>
         </div>
 
-        {/* Quick Stats */}
-        <div className="flex gap-4 w-full md:w-auto">
-          <div className="bg-zinc-50 border border-zinc-100 px-6 py-3 rounded-2xl flex-1 md:flex-none">
-            <p className="text-[8px] font-black text-zinc-400 uppercase tracking-widest">
-              Total Races
-            </p>
-            <p className="text-xl font-black italic">
-              {registrations?.length || 0}
-            </p>
-          </div>
-          <div className="bg-black text-white px-6 py-3 rounded-2xl flex-1 md:flex-none shadow-xl shadow-zinc-200">
-            <p className="text-[8px] font-black text-zinc-500 uppercase tracking-widest">
-              Active BIBs
-            </p>
-            <p className="text-xl font-black italic text-green-400">
-              {paidCount}
-            </p>
+        {/* Hero Content - Strictly Aligned with the 7xl container */}
+        <div className="max-w-7xl mx-auto w-full px-6 md:px-12 relative z-20">
+          <div className="w-full flex flex-col md:flex-row md:items-end justify-between gap-8">
+            {/* Left Side: Athlete Identity */}
+            <div className="max-w-4xl space-y-6">
+              <div className="flex items-center gap-4">
+                <span className="px-4 py-1.5 bg-brand-success text-black rounded-full italic text-[10px] font-black uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(34,197,94,0.3)] animate-pulse">
+                  ● {isAdmin ? "Admin Profile" : "Live Profile"}
+                </span>
+                <span className="text-white/20 font-black uppercase tracking-[0.5em] text-[10px] italic border-l border-white/10 pl-4">
+                  FYTRR Protocol v1.0
+                </span>
+              </div>
+
+              <h1 className="text-7xl md:text-9xl font-black italic uppercase tracking-tighter leading-[0.8] text-white">
+                MY <br />
+                <span
+                  className="drop-shadow-sm opacity-20"
+                  style={{
+                    WebkitTextStroke: "2px white",
+                    color: "transparent",
+                  }}
+                >
+                  TRACK
+                </span>
+              </h1>
+
+              <p className="text-brand-success/60 text-xs font-black uppercase tracking-[0.4em] max-w-sm border-l-2 border-brand-success pl-6 italic">
+                Performance Intelligence & <br /> Race Identity Management
+              </p>
+            </div>
+
+            {/* 🛠️ ADMIN BUTTON - Aligned with the top of the Stats Cards line */}
+            {isAdmin && (
+              <div className="pb-2 md:pb-4 relative z-30">
+                <Link
+                  href="/admin"
+                  className="group flex items-center gap-3 bg-white text-black px-8 py-4 md:py-5 rounded-[2rem] font-black uppercase text-[10px] tracking-[0.2em] hover:bg-brand-success transition-all shadow-[0_20px_40px_rgba(0,0,0,0.4)] active:scale-95 border-2 border-transparent"
+                >
+                  <LayoutDashboard
+                    size={18}
+                    className="group-hover:rotate-12 transition-transform"
+                  />
+                  Admin Control Center
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {!registrations || registrations.length === 0 ? (
-        <div className="relative group overflow-hidden flex flex-col items-center justify-center h-80 border-4 border-dashed border-zinc-100 rounded-[3rem] bg-zinc-50/50 space-y-6 transition-all hover:bg-white hover:border-zinc-200">
-          <div className="text-6xl grayscale opacity-20">🏃‍♂️</div>
-          <div className="text-center space-y-1">
-            <p className="text-zinc-400 font-black uppercase italic tracking-[0.2em] text-sm">
-              Your track is empty
+      {/* 🏁 CONTENT OVERLAY - Margin Adjusted for exact card alignment */}
+      <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 -mt-10 md:-mt-12 space-y-16">
+        {/* 📊 High-Contrast Stats Cards Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
+          {/* Total Deployments Card */}
+          <div className="bg-white p-10 rounded-[2.5rem] shadow-[0_40px_80px_rgba(0,0,0,0.4)] transform hover:-translate-y-2 transition-all duration-500 group">
+            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-3 group-hover:text-brand-success transition-colors italic">
+              Total Deployments
             </p>
-            <p className="text-zinc-300 text-[10px] font-bold uppercase">
-              No registrations found yet
+            <p className="text-6xl font-black italic text-black leading-none">
+              {registrations?.length.toString().padStart(2, "0") || "00"}
             </p>
           </div>
-          <Link
-            href="/"
-            className="bg-black text-white px-10 py-4 rounded-full text-xs font-black uppercase tracking-widest hover:scale-105 transition-all shadow-xl"
-          >
-            Find a Race
-          </Link>
-        </div>
-      ) : (
-        <div className="grid gap-8">
-          {registrations.map((reg) => {
-            const category = Array.isArray(reg.categories)
-              ? reg.categories[0]
-              : reg.categories;
-            const event = Array.isArray(reg.events)
-              ? reg.events[0]
-              : reg.events;
-            const participants = reg.participants || [];
-            const isPaid = reg.status === "paid";
 
-            return (
-              <div
-                key={reg.id}
-                className="group relative border border-zinc-100 rounded-[2.5rem] p-1 shadow-sm hover:shadow-2xl transition-all duration-700 bg-white overflow-hidden"
-              >
-                {/* ⚡ High-Impact Status Bar */}
-                <div
-                  className={`h-1.5 w-full ${
-                    isPaid ? "bg-green-500" : "bg-yellow-400"
-                  }`}
-                />
+          {/* Verified BIBs Card */}
+          <div className="bg-white p-10 rounded-[2.5rem] shadow-[0_40px_80px_rgba(0,0,0,0.4)] transform hover:-translate-y-2 transition-all duration-500 border-b-8 border-brand-success/5">
+            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-3 italic">
+              Verified BIBs
+            </p>
+            <p className="text-6xl font-black italic text-black leading-none mb-4">
+              {paidCount.toString().padStart(2, "0")}
+            </p>
+            <div className="h-1.5 w-16 bg-brand-success rounded-full shadow-[0_0_15px_rgba(34,197,94,0.5)] animate-pulse" />
+          </div>
 
-                <div className="p-8 md:p-10 space-y-8">
-                  <div className="flex flex-col md:flex-row justify-between items-start gap-6">
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-3">
-                        <span
-                          className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-[0.2em] ${
-                            isPaid
-                              ? "bg-green-50 text-green-600"
-                              : "bg-yellow-50 text-yellow-700"
-                          }`}
-                        >
-                          {reg.status}
-                        </span>
-                        <p className="text-[10px] text-zinc-400 font-black uppercase tracking-widest">
-                          ID: #{reg.id.slice(0, 8)}
-                        </p>
-                      </div>
-                      <h3 className="text-3xl md:text-4xl font-black italic uppercase tracking-tighter leading-none">
-                        {event?.name}{" "}
-                        <span className="text-zinc-200 italic ml-2">
-                          {category.name}
-                        </span>
-                      </h3>
-                    </div>
-
-                    <div className="bg-zinc-50 px-6 py-4 rounded-3xl border border-zinc-100 text-center md:text-right min-w-[140px]">
-                      <p className="text-[8px] font-black text-zinc-400 uppercase tracking-widest mb-1">
-                        Fee Paid
-                      </p>
-                      <p className="text-2xl font-black italic">
-                        ₹{category.price * participants.length}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Participant Cards Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {participants.map((p) => (
-                      <div
-                        key={p.id}
-                        className="flex justify-between items-center bg-zinc-50/50 border border-zinc-100 p-6 rounded-[1.5rem] hover:bg-white hover:border-black transition-all group/p"
-                      >
-                        <div className="space-y-1">
-                          <p className="text-[9px] uppercase font-black text-zinc-400 tracking-widest">
-                            Competitor
-                          </p>
-                          <p className="text-lg font-black uppercase italic text-black">
-                            {p.participant_name}
-                          </p>
-                        </div>
-
-                        {isPaid && p.bib_number ? (
-                          <div className="text-right flex flex-col items-center">
-                            <p className="text-[8px] uppercase font-black text-zinc-400 tracking-widest mb-1">
-                              BIB
-                            </p>
-                            <span className="font-black text-lg bg-black text-white px-5 py-2 rounded-2xl shadow-[0_10px_20px_-5px_rgba(0,0,0,0.3)]">
-                              {p.bib_number}
-                            </span>
-                          </div>
-                        ) : (
-                          <div className="animate-pulse flex items-center gap-2">
-                            <div className="h-2 w-2 bg-zinc-300 rounded-full" />
-                            <span className="text-[9px] text-zinc-400 font-black uppercase italic">
-                              Syncing...
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-
-                  {isPaid && (
-                    <div className="pt-6">
-                      <Link
-                        href={`/event/${event?.slug}/results`}
-                        className="flex items-center justify-center gap-3 w-full bg-zinc-950 text-white py-5 rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-xs hover:bg-black transition-all hover:shadow-2xl active:scale-[0.98]"
-                      >
-                        View Official Leaderboard
-                        <svg
-                          width="18"
-                          height="18"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="3"
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                        >
-                          <path d="m9 18 6-6-6-6" />
-                        </svg>
-                      </Link>
-                    </div>
-                  )}
-                </div>
+          {/* Athlete Status Card (Admin Style Dark) */}
+          <div className="bg-zinc-900 border border-white/5 p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group transform hover:-translate-y-2 transition-all duration-500">
+            <div className="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
+              <div className="text-8xl font-black italic text-white font-serif">
+                FYT
               </div>
-            );
-          })}
+            </div>
+            <p className="text-[10px] font-black text-brand-success uppercase tracking-[0.3em] mb-3 italic">
+              Athlete Status
+            </p>
+            <p className="text-4xl font-black italic text-white leading-none uppercase tracking-tighter">
+              Elite <span className="text-zinc-700">Level</span>
+            </p>
+          </div>
         </div>
-      )}
+
+        {/* 📋 Registration List Section */}
+        <div className="space-y-12 animate-in fade-in slide-in-from-top-12 duration-1000">
+          <div className="flex items-center justify-between border-b-2 border-white/5 pb-10">
+            <h2 className="text-4xl font-black italic uppercase tracking-tighter text-white">
+              Registered <span className="opacity-20 text-white">Events</span>
+            </h2>
+            <div className="flex items-center gap-3">
+              <div className="h-2 w-2 bg-brand-success rounded-full animate-ping" />
+              <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em]">
+                Syncing Results
+              </span>
+            </div>
+          </div>
+
+          {!registrations || registrations.length === 0 ? (
+            <EmptyTrackView />
+          ) : (
+            <div className="grid grid-cols-1 gap-12">
+              {registrations.map((reg) => (
+                <RegistrationCard key={reg.id} reg={reg} />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

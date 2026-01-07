@@ -28,26 +28,7 @@ export default function EventManager({ event }: { event: any }) {
       return regAcc + regPayment;
     }, 0) || 0;
 
-  // Update Rank & Time Logic
-  // const handleResultUpdate = async (
-  //   pId: string,
-  //   rank: string,
-  //   time: string
-  // ) => {
-  //   const { error } = await supabase
-  //     .from("participants")
-  //     .update({
-  //       rank: rank ? parseInt(rank) : null,
-  //       finish_time: time,
-  //     })
-  //     .eq("id", pId);
 
-  //   if (error) {
-  //     alert("Update Failed: " + error.message);
-  //   } else {
-  //     console.log("Result saved for:", pId);
-  //   }
-  // };
 
   const handleDelete = async () => {
     if (totalAthletes > 0) {
@@ -122,191 +103,195 @@ export default function EventManager({ event }: { event: any }) {
   };
 
   return (
-    <div className="bg-white border-2 border-zinc-100 rounded-[2.5rem] p-8 shadow-sm hover:border-black transition-all mb-6">
-      <div className="flex flex-col lg:flex-row justify-between gap-8">
-        <div className="space-y-4 flex-1">
-          {/* Status & Name */}
-          <div>
-            <span
-              className={`text-[10px] font-black uppercase px-2 py-0.5 rounded ${
-                event.is_active
-                  ? "bg-green-100 text-green-700"
-                  : "bg-zinc-100 text-zinc-500"
-              }`}
-            >
-              {event.is_active ? "Active" : "Draft"}
-            </span>
-            <h3 className="text-3xl font-black italic uppercase tracking-tighter mt-2">
-              {event.name}
-            </h3>
-            <p className="text-xs text-zinc-400 font-bold uppercase">
-              {event.location} • {new Date(event.event_date).toDateString()}
-            </p>
-          </div>
-          {/* Mini Stats Grid */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4">
-            <div className="bg-zinc-50 p-4 rounded-2xl border">
-              <p className="text-[9px] font-black text-zinc-400 uppercase">
-                Total Revenue
-              </p>
-              <p className="text-xl font-black italic">
-                ₹{totalRevenue.toLocaleString("en-IN")}
+    <div className="bg-white border border-black/5 rounded-[2rem] p-5 md:p-8 shadow-sm hover:shadow-xl transition-all duration-500 mb-6 group overflow-hidden">
+      <div className="flex flex-col lg:flex-row gap-6 items-stretch">
+        {/* 🟢 LEFT SECTION: Info & Results */}
+        <div className="flex-1 min-w-0 flex flex-col justify-between space-y-6">
+          <div className="space-y-4">
+            {/* Status & Name */}
+            <div className="space-y-2">
+              <div className="flex items-center gap-3">
+                <span
+                  className={`text-[8px] font-black uppercase px-2.5 py-1 rounded-full italic tracking-widest shadow-sm ${
+                    event.is_active
+                      ? "bg-brand-success text-black animate-pulse"
+                      : "bg-zinc-800 text-white"
+                  }`}
+                >
+                  {event.is_active ? "● Live" : "○ Draft"}
+                </span>
+                <span className="text-[9px] font-black text-black/30 uppercase tracking-[0.3em]">
+                  {event.location}
+                </span>
+              </div>
+              <h3 className="text-3xl md:text-5xl font-black italic uppercase tracking-tighter leading-[0.9] text-black">
+                {event.name}
+              </h3>
+              <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest italic">
+                {new Date(event.event_date).toDateString()}
               </p>
             </div>
-            <div className="bg-zinc-50 p-4 rounded-2xl border">
-              <p className="text-[9px] font-black text-zinc-400 uppercase">
-                Paid Athletes
-              </p>
-              <p className="text-xl font-black italic">{totalAthletes}</p>
+
+            {/* Compact Stats Row */}
+            <div className="flex gap-3 max-w-lg">
+              <div className="bg-black px-5 py-3 rounded-2xl flex-1 shadow-lg">
+                <p className="text-[7px] font-black text-brand-success/60 uppercase tracking-widest mb-0.5">
+                  Revenue
+                </p>
+                <p className="text-xl font-black italic text-white leading-none">
+                  ₹{totalRevenue.toLocaleString("en-IN")}
+                </p>
+              </div>
+              <div className="bg-zinc-50 px-5 py-3 rounded-2xl flex-1 border border-black/5">
+                <p className="text-[7px] font-black text-black/30 uppercase tracking-widest mb-0.5">
+                  Athletes
+                </p>
+                <p className="text-xl font-black italic text-black leading-none">
+                  {totalAthletes.toString().padStart(2, "0")}
+                </p>
+              </div>
             </div>
           </div>
 
-          {/* --- RESULT MANAGEMENT SECTION --- */}
-          <div className="mt-6 border-t pt-6">
+          {/* Result Action Button */}
+          <div className="pt-2">
             <button
               onClick={() => setShowAthletes(!showAthletes)}
-              className="text-[10px] font-black uppercase bg-black text-white px-6 py-2 rounded-xl hover:bg-zinc-800 transition-all"
+              className={`flex items-center gap-3 text-[9px] font-black uppercase tracking-[0.2em] px-6 py-3.5 rounded-xl transition-all shadow-md ${
+                showAthletes
+                  ? "bg-zinc-100 text-black border border-black/10"
+                  : "bg-black text-white hover:bg-brand-success hover:text-black"
+              }`}
             >
-              {showAthletes ? "Close Results" : "Manage Race Results"}
+              {showAthletes ? "✕ Close Results" : "⚙ Manage Athlete Data"}
             </button>
-
-            {showAthletes && (
-              <div className="mt-6 space-y-3">
-                {event.registrations
-                  ?.flatMap((reg: any) => reg.participants || [])
-                  .filter((p: any) => p.bib_number)
-                  // ✅ Stable sorting taaki rank update karne par list jump na kare
-                  .sort((a: any, b: any) =>
-                    a.bib_number.localeCompare(b.bib_number, undefined, {
-                      numeric: true,
-                      sensitivity: "base",
-                    })
-                  )
-                  .map((participant: any) => (
-                    <div
-                      key={participant.id}
-                      className={`flex items-center justify-between p-4 bg-zinc-50 rounded-2xl border transition-all ${
-                        updatingId === participant.id
-                          ? "border-yellow-400 opacity-70"
-                          : "border-zinc-100"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        {/* ✅ 🟢 Green: Pura | 🟠 Orange: Adhura | ⚪ Grey: Pending */}
-                        <div
-                          className={`h-2 w-2 rounded-full transition-all duration-500 ${
-                            participant.rank && participant.finish_time
-                              ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)]"
-                              : participant.rank || participant.finish_time
-                              ? "bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.6)]"
-                              : "bg-zinc-300"
-                          }`}
-                        />
-                        <div>
-                          <p className="text-[10px] font-black uppercase italic leading-none">
-                            {participant.participant_name}
-                          </p>
-                          <p className="text-[8px] font-bold text-zinc-400 uppercase tracking-widest mt-1">
-                            BIB: {participant.bib_number}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex gap-2 items-center">
-                        {/* ✅ Dynamic Status Indicators */}
-                        <div className="min-w-[70px] text-right mr-2">
-                          {updatingId === participant.id ? (
-                            <span className="text-[8px] font-black text-yellow-600 animate-pulse uppercase">
-                              Saving...
-                            </span>
-                          ) : participant.rank && participant.finish_time ? (
-                            <span className="text-[8px] font-black text-green-600 uppercase">
-                              ✓ Complete
-                            </span>
-                          ) : participant.rank || participant.finish_time ? (
-                            <span className="text-[8px] font-black text-orange-600 uppercase">
-                              ! Incomplete
-                            </span>
-                          ) : null}
-                        </div>
-
-                        <input
-                          type="number"
-                          placeholder="Rank"
-                          defaultValue={participant.rank}
-                          disabled={updatingId === participant.id}
-                          className="w-16 bg-white border border-zinc-200 rounded-xl px-3 py-2 text-[10px] font-black disabled:opacity-50"
-                          onBlur={(e) => {
-                            if (
-                              e.target.value !== String(participant.rank || "")
-                            ) {
-                              handleResultUpdate(
-                                participant.id,
-                                e.target.value,
-                                participant.finish_time
-                              );
-                            }
-                          }}
-                        />
-                        <input
-                          type="text"
-                          placeholder="HH:MM:SS"
-                          defaultValue={participant.finish_time}
-                          disabled={updatingId === participant.id}
-                          className="w-28 bg-white border border-zinc-200 rounded-xl px-3 py-2 text-[10px] font-black disabled:opacity-50"
-                          onBlur={(e) => {
-                            if (
-                              e.target.value !== (participant.finish_time || "")
-                            ) {
-                              handleResultUpdate(
-                                participant.id,
-                                String(participant.rank || ""),
-                                e.target.value
-                              );
-                            }
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            )}
           </div>
         </div>
 
-        {/* Category Management Side */}
-        <div className="lg:w-1/3 bg-zinc-900 text-white p-6 rounded-[2rem] space-y-4 shadow-xl">
-          <p className="text-[10px] font-black uppercase tracking-widest text-zinc-500">
-            Category Intelligence
-          </p>
-          <CategoryManager
-            eventId={event.id}
-            initialCategories={event.categories}
-          />
-          <div className="pt-4 border-t border-zinc-800 space-y-2">
+        {/* ⬛ RIGHT SECTION: Category Sidebar (Optimized Width) */}
+        <div className="lg:w-[320px] bg-black text-white p-6 rounded-[1.8rem] flex flex-col justify-between shrink-0 relative overflow-hidden shadow-2xl">
+          <div className="relative z-10 space-y-6">
+            <div className="flex items-center justify-between border-b border-white/10 pb-3">
+              <p className="text-[8px] font-black uppercase tracking-[0.3em] text-brand-success italic">
+                Setup Control
+              </p>
+              <span className="text-[10px] text-white/20 font-black italic">
+                FYT-v1
+              </span>
+            </div>
+
+            {/* Category Logic with Scale Fix */}
+            <div className="overflow-visible">
+              <CategoryManager
+                eventId={event.id}
+                initialCategories={event.categories}
+              />
+            </div>
+          </div>
+
+          {/* Sidebar Quick Actions */}
+          <div className="relative z-10 pt-6 border-t border-white/10 space-y-2 mt-4">
             <button
               onClick={toggleActive}
-              disabled={loading}
-              className={`w-full py-3 rounded-xl text-[10px] font-black uppercase transition-all border ${
+              className={`w-full py-3.5 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border ${
                 event.is_active
-                  ? "border-green-900 text-green-500 hover:bg-green-950"
-                  : "border-zinc-700 text-zinc-400 hover:bg-zinc-800"
+                  ? "border-brand-success/50 text-brand-success hover:bg-brand-success/10"
+                  : "border-white/20 text-white/40"
               }`}
             >
-              {event.is_active
-                ? "● Pause Registrations"
-                : "○ Resume Registrations"}
+              {event.is_active ? "● Suspend Reg" : "○ Launch Event"}
             </button>
             <button
               onClick={handleDelete}
-              disabled={loading}
-              className="w-full border border-red-900 text-red-500 py-3 rounded-xl text-[10px] font-black uppercase hover:bg-red-950 transition-all disabled:opacity-50"
+              className="w-full text-red-500/30 py-2 text-[8px] font-black uppercase hover:text-red-500 transition-all italic tracking-tighter"
             >
-              Delete Event
+              Terminate Record
             </button>
           </div>
         </div>
       </div>
+
+      {/* 📜 Result List - Full Width below the top row */}
+      {showAthletes && (
+        <div className="mt-8 pt-8 border-t-2 border-zinc-100 animate-in fade-in slide-in-from-top-4 duration-500">
+          <div className="block w-full max-h-[450px] overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+            {event.registrations
+              ?.flatMap((reg: any) => reg.participants || [])
+              .filter((p: any) => p.bib_number)
+              .sort((a: any, b: any) =>
+                a.bib_number.localeCompare(b.bib_number, undefined, {
+                  numeric: true,
+                })
+              )
+              .map((participant: any) => (
+                <div
+                  key={participant.id}
+                  className={`flex flex-col md:flex-row items-center justify-between p-4 rounded-2xl border transition-all shrink-0 ${
+                    updatingId === participant.id
+                      ? "bg-brand-success/5 border-brand-success"
+                      : "bg-zinc-50 border-zinc-100 hover:border-zinc-300 shadow-sm"
+                  }`}
+                >
+                  <div className="flex items-center gap-4">
+                    <div
+                      className={`h-2.5 w-2.5 rounded-full shrink-0 border-2 border-white shadow-sm ${
+                        participant.rank && participant.finish_time
+                          ? "bg-brand-success animate-pulse"
+                          : "bg-zinc-300"
+                      }`}
+                    />
+                    <div>
+                      <p className="text-sm font-black uppercase italic leading-none text-black">
+                        {participant.participant_name}
+                      </p>
+                      <p className="text-[8px] font-black text-white bg-black px-2 py-0.5 rounded mt-1 inline-block tracking-widest">
+                        BIB: {participant.bib_number}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex gap-3 items-center mt-4 md:mt-0">
+                    <div className="flex flex-col gap-0.5">
+                      <label className="text-[7px] font-black text-black/30 ml-1">
+                        RANK
+                      </label>
+                      <input
+                        type="number"
+                        defaultValue={participant.rank}
+                        className="w-16 bg-white border border-zinc-200 rounded-lg px-2 py-2 text-[10px] font-black outline-none focus:border-black"
+                        onBlur={(e) =>
+                          handleResultUpdate(
+                            participant.id,
+                            e.target.value,
+                            participant.finish_time
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="flex flex-col gap-0.5">
+                      <label className="text-[7px] font-black text-black/30 ml-1">
+                        TIME
+                      </label>
+                      <input
+                        type="text"
+                        placeholder="00:00:00"
+                        defaultValue={participant.finish_time}
+                        className="w-28 bg-white border border-zinc-200 rounded-lg px-2 py-2 text-[10px] font-black outline-none focus:border-black"
+                        onBlur={(e) =>
+                          handleResultUpdate(
+                            participant.id,
+                            String(participant.rank || ""),
+                            e.target.value
+                          )
+                        }
+                      />
+                    </div>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -51,72 +51,81 @@ export default function CategoryManager({
   };
 
   return (
-    <div className="space-y-6 pt-6 border-t border-zinc-800">
-      <h4 className="text-[10px] font-black uppercase tracking-widest text-zinc-500 italic">
-        Live Categories
-      </h4>
+    <div className="space-y-4 pt-4 border-t border-white/10">
+      <div className="flex items-center justify-between px-1">
+        <h4 className="text-[9px] font-black uppercase tracking-[0.4em] text-brand-success italic">
+          Live Protocols
+        </h4>
+        <span className="text-[8px] font-black text-white/30 uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded">
+          {categories.length} Units
+        </span>
+      </div>
 
-      <div className="space-y-3">
+      {/* 📜 Categories List: Compact Scroll */}
+      <div className="space-y-2 max-h-[120px] overflow-y-auto pr-1 custom-scrollbar">
         {categories.map((cat) => (
           <div
             key={cat.id}
-            className="flex justify-between items-center bg-zinc-800 p-3 rounded-xl border border-zinc-700"
+            className="flex justify-between items-center bg-white/[0.03] p-3 rounded-xl border border-white/5 group hover:border-brand-success/30 transition-all"
           >
-            <div>
-              <p className="text-sm font-bold uppercase italic text-white">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs font-black uppercase italic text-white leading-none mb-1 truncate">
                 {cat.name}
               </p>
-              <p className="text-[10px] text-zinc-500 font-mono uppercase">
-                Prefix: {cat.bib_prefix} • Price: ₹{cat.price}
+              <p className="text-[9px] text-zinc-500 font-black uppercase tracking-tight">
+                PFX:{" "}
+                <span className="text-brand-success">{cat.bib_prefix}</span> • ₹
+                {cat.price}
               </p>
             </div>
             <button
               onClick={() => deleteCategory(cat.id)}
-              className="text-red-500 hover:bg-red-900/20 p-2 rounded-lg transition-all"
+              className="text-red-500/20 hover:text-red-500 hover:bg-red-500/10 p-2 rounded-lg transition-all ml-2"
             >
               <svg
-                xmlns="http://www.w3.org/2000/svg"
                 width="14"
                 height="14"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth="3"
-                strokeLinecap="round"
-                strokeLinejoin="round"
               >
-                <path d="M3 6h18" />
-                <path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6" />
-                <path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
+                <path d="M3 6h18M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2" />
               </svg>
             </button>
           </div>
         ))}
       </div>
 
-      {/* Add Category Form */}
-      <form onSubmit={addCategory} className="grid grid-cols-3 gap-2 pt-2">
-        <input
-          placeholder="Name (10KM)"
-          className="bg-black border border-zinc-700 p-2 rounded-lg text-[10px] text-white outline-none focus:border-zinc-500"
-          value={newCat.name}
-          onChange={(e) => setNewCat({ ...newCat, name: e.target.value })}
-          required
-        />
-        <input
-          placeholder="Prefix (W-)"
-          className="bg-black border border-zinc-700 p-2 rounded-lg text-[10px] text-white outline-none focus:border-zinc-500"
-          value={newCat.bib_prefix}
-          onChange={(e) =>
-            setNewCat({ ...newCat, bib_prefix: e.target.value.toUpperCase() })
-          }
-          required
-        />
+      {/* ➕ Add Category: Ultra-Wide Compact Form */}
+      <form
+        onSubmit={addCategory}
+        className="space-y-2 pt-3 border-t border-white/5"
+      >
+        <div className="grid grid-cols-2 gap-2">
+          <input
+            placeholder="Name (e.g. 10KM)"
+            className="bg-black border border-white/10 p-3 rounded-lg text-[10px] font-black text-white outline-none focus:border-brand-success transition-all italic"
+            value={newCat.name}
+            onChange={(e) => setNewCat({ ...newCat, name: e.target.value })}
+            required
+          />
+          <input
+            placeholder="Prefix (W-)"
+            className="bg-black border border-white/10 p-3 rounded-lg text-[10px] font-black text-white outline-none focus:border-brand-success transition-all"
+            value={newCat.bib_prefix}
+            onChange={(e) =>
+              setNewCat({ ...newCat, bib_prefix: e.target.value.toUpperCase() })
+            }
+            required
+          />
+        </div>
+
         <div className="flex gap-2">
           <input
             type="number"
-            placeholder="Price"
-            className="flex-1 bg-black border border-zinc-700 p-2 rounded-lg text-[10px] text-white outline-none focus:border-zinc-500"
+            placeholder="Price (INR)"
+            className="flex-1 bg-black border border-white/10 p-3 rounded-lg text-[10px] font-black text-white outline-none focus:border-brand-success transition-all"
             value={newCat.price || ""}
             onChange={(e) =>
               setNewCat({ ...newCat, price: parseInt(e.target.value) })
@@ -125,9 +134,9 @@ export default function CategoryManager({
           />
           <button
             disabled={loading}
-            className="bg-white text-black px-3 rounded-lg text-[10px] font-black uppercase hover:bg-zinc-200 transition-all"
+            className="bg-brand-success text-black px-6 py-3 rounded-lg text-[10px] font-black uppercase hover:scale-95 transition-all shadow-lg active:opacity-80"
           >
-            {loading ? "..." : "+"}
+            {loading ? "..." : "ADD"}
           </button>
         </div>
       </form>

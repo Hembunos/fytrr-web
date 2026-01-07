@@ -10,7 +10,7 @@
   --color-brand-warning: var(--brand-warning);
   --color-brand-danger: var(--brand-danger);
 
-  /* 🏎️ Custom Border Radius for Race Cards */
+  /* 🏎️ Custom Border Radius */
   --radius-race: 2.5rem;
 
   /* Fonts */
@@ -19,27 +19,35 @@
 }
 
 :root {
-  /* Base Colors */
-  --background: #ffffff;
-  --foreground: #000000;
+  /* 💡 Base Background - Pure Stealth Black */
+  --background: #000000;
+  --foreground: #ffffff;
 
-  /* Brand Variables (Hex codes for easy editing) */
-  --brand-primary: #000000;    /* Pure Black */
-  --brand-secondary: #ffffff;  /* Pure White */
-  --brand-muted: #09090b;      /* Zinc-950 */
-  --brand-accent: #a1a1aa;     /* Zinc-400 */
-  --brand-success: #22c55e;    /* Green */
-  --brand-warning: #f59e0b;    /* Orange */
-  --brand-danger: #ef4444;     /* Red */
+  /* 🏎️ Brand Palette - High Performance Contrast */
+  --brand-primary: #000000;    /* Background aur Strips ke liye */
+  --brand-secondary: #ffffff;  /* Text aur main cards ke liye */
+  
+  /* --brand-muted: Ise thoda dark rakha hai taaki black bg par cards alag se dikhein */
+  --brand-muted: #0a0a0a;      /* Rich Black for subtle module backgrounds */
+  
+  /* --brand-accent: Zinc-400 shades readability ke liye best hain */
+  --brand-accent: #a1a1aa;     /* Smooth grey for secondary text */
+  
+  --brand-success: #22c55e;    /* Racing Green (Neon vibe) */
+  --brand-warning: #fbbf24;    
+  --brand-danger: #ef4444;     
 }
 
-/* Dark Mode logic consistent with your brand */
+/* 🌙 Dark Mode Support - Ab ye seamless lagega */
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #000000;
-    --foreground: #ffffff;
-    --brand-primary: #ffffff;
-    --brand-secondary: #000000;
+    --foreground: #f8fafc;
+    
+    --brand-primary: #000000;
+    --brand-secondary: #f8fafc;
+    --brand-muted: #0c0c0e;    /* Thoda lighter shade depth dene ke liye */
+    --brand-accent: #71717a;   
   }
 }
 
@@ -50,7 +58,28 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Smooth Scrolling for #active-races anchor */
+/* Clear Hierarchy for Headings */
+h1, h2, h3 {
+  letter-spacing: -0.05em;
+  line-height: 0.85; /* Thoda aur tight aur aggressive look */
+}
+
+/* Smooth Scrolling */
 html {
   scroll-behavior: smooth;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f4f4f5;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #000;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #22c55e; /* brand-success on hover */
 }

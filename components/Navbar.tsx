@@ -23,154 +23,180 @@ export default function Navbar({ initialUser }: { initialUser: any }) {
     return () => subscription.unsubscribe();
   }, [router]);
 
-  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+    // Prevent scrolling when menu is open
+    if (!isMenuOpen) document.body.style.overflow = "hidden";
+    else document.body.style.overflow = "unset";
+  };
 
-  return (
-    <nav className="sticky top-0 z-[100] w-full border-b border-brand-accent/10 bg-brand-secondary/80 backdrop-blur-md">
-      <div className="max-w-7xl mx-auto flex justify-between items-center h-20 px-6">
-        {/* Brand Logo - Updated to Brand Tokens */}
-        <Link href="/" className="group flex items-center gap-2 relative z-50">
-          <span className="font-black text-2xl italic tracking-tighter uppercase transition-all group-hover:tracking-widest text-brand-primary">
-            FYTRR <span className="text-brand-accent">RUN</span>
-          </span>
-        </Link>
+ return (
+   <nav className="sticky top-0 z-[100] w-full border-b border-white/5 bg-black/80 backdrop-blur-xl">
+     <div className="max-w-7xl mx-auto flex justify-between items-center h-20 px-6">
+       {/* 🏎️ Brand Logo */}
+       <Link
+         href="/"
+         className="group flex items-center gap-2 relative z-[1100]"
+       >
+         <span className="font-black text-2xl italic tracking-tighter uppercase text-white">
+           FYTRR <span className="text-brand-success">RUN</span>
+         </span>
+       </Link>
 
-        {/* Desktop Navigation */}
-        <div className="hidden md:flex items-center gap-10 text-[11px] font-black uppercase tracking-[0.2em]">
-          {!user ? (
-            <>
-              <Link
-                href="/login"
-                className={`hover:text-brand-primary transition-colors ${
-                  pathname === "/login"
-                    ? "text-brand-primary"
-                    : "text-brand-accent"
-                }`}
-              >
-                Login
-              </Link>
-              <Link
-                href="/signup"
-                className="bg-brand-primary text-brand-secondary px-8 py-3.5 rounded-race hover:bg-brand-success transition-all active:scale-95 shadow-lg shadow-brand-success/10"
-              >
-                Join Race
-              </Link>
-            </>
-          ) : (
-            <>
-              <Link
-                href="/dashboard"
-                className={`hover:text-brand-primary transition-colors flex items-center gap-2 ${
-                  pathname === "/dashboard"
-                    ? "text-brand-primary"
-                    : "text-brand-accent"
-                }`}
-              >
-                <span className="h-1.5 w-1.5 bg-brand-success rounded-full animate-pulse" />
-                Dashboard
-              </Link>
-              <button
-                className="text-brand-danger hover:opacity-70 transition-colors uppercase cursor-pointer"
-                onClick={async () => {
-                  await supabase.auth.signOut();
-                  setUser(null);
-                  router.push("/");
-                  router.refresh();
-                }}
-              >
-                Logout
-              </button>
-            </>
-          )}
-        </div>
+       {/* 💻 Desktop Navigation */}
+       <div className="hidden md:flex items-center gap-10 text-[11px] font-black uppercase tracking-[0.4em]">
+         <Link
+           href="/gallery"
+           className="text-white/40 hover:text-brand-success"
+         >
+           Gallery
+         </Link>
 
-        {/* Mobile Menu Toggle Button */}
-        <button
-          className="md:hidden relative z-50 p-2 text-brand-primary"
-          onClick={toggleMenu}
-        >
-          <div className="space-y-1.5">
-            <span
-              className={`block h-0.5 w-6 bg-current transition-all ${
-                isMenuOpen ? "rotate-45 translate-y-2" : ""
-              }`}
-            />
-            <span
-              className={`block h-0.5 w-6 bg-current transition-all ${
-                isMenuOpen ? "opacity-0" : ""
-              }`}
-            />
-            <span
-              className={`block h-0.5 w-6 bg-current transition-all ${
-                isMenuOpen ? "-rotate-45 -translate-y-2" : ""
-              }`}
-            />
-          </div>
-        </button>
+         {!user ? (
+           <>
+             <Link
+               href="/login"
+               className="text-white/40 hover:text-brand-success"
+             >
+               Login
+             </Link>
+             <Link
+               href="/signup"
+               className="bg-white text-black px-8 py-3.5 rounded-2xl hover:bg-brand-success transition-all shadow-lg italic"
+             >
+               Join Race
+             </Link>
+           </>
+         ) : (
+           <>
+             <Link
+               href="/dashboard"
+               className="text-white flex items-center gap-2"
+             >
+               <span className="h-1.5 w-1.5 bg-brand-success rounded-full animate-pulse" />
+               Dashboard
+             </Link>
+             <button
+               className="text-brand-danger/60 hover:text-brand-danger italic"
+               onClick={async () => {
+                 await supabase.auth.signOut();
+                 setUser(null);
+                 router.push("/");
+                 router.refresh();
+               }}
+             >
+               Logout
+             </button>
+           </>
+         )}
+       </div>
 
-        {/* Mobile Navigation Overlay */}
-        <div
-          className={`fixed inset-0 bg-brand-secondary z-40 flex flex-col items-center justify-center gap-12 transition-all duration-500 md:hidden ${
-            isMenuOpen
-              ? "translate-y-0 opacity-100"
-              : "-translate-y-full opacity-0"
-          }`}
-        >
-          <div className="flex flex-col items-center gap-8 text-xl font-black italic uppercase tracking-tighter">
-            <Link href="/" onClick={toggleMenu} className="text-brand-primary">
-              Home
-            </Link>
-            <Link
-              href="/gallery"
-              onClick={toggleMenu}
-              className="text-brand-primary"
-            >
-              Gallery
-            </Link>
+       {/* 📱 Hamburger Button (HIDES when menu open) */}
+       <button
+         onClick={toggleMenu}
+         className={`md:hidden p-2 text-white transition-opacity ${
+           isMenuOpen ? "opacity-0 pointer-events-none" : "opacity-100"
+         }`}
+       >
+         <div className="space-y-1.5">
+           <span className="block h-0.5 w-6 bg-current" />
+           <span className="block h-0.5 w-6 bg-current" />
+           <span className="block h-0.5 w-6 bg-current" />
+         </div>
+       </button>
 
-            {!user ? (
-              <>
-                <Link
-                  href="/login"
-                  onClick={toggleMenu}
-                  className="text-brand-accent"
-                >
-                  Login
-                </Link>
-                <Link
-                  href="/signup"
-                  onClick={toggleMenu}
-                  className="bg-brand-primary text-brand-secondary px-10 py-4 rounded-race"
-                >
-                  Join Race
-                </Link>
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/dashboard"
-                  onClick={toggleMenu}
-                  className="text-brand-success"
-                >
-                  Dashboard
-                </Link>
-                <button
-                  className="text-brand-danger"
-                  onClick={async () => {
-                    toggleMenu();
-                    await supabase.auth.signOut();
-                    setUser(null);
-                    router.push("/");
-                    router.refresh();
-                  }}
-                >
-                  Logout
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
-    </nav>
-  );
+       {/* 🏁 Mobile Navigation Overlay */}
+       <div
+         className={`fixed inset-0 bg-black z-[1000] flex flex-col md:hidden
+        transition-all duration-300 ease-out
+        ${
+          isMenuOpen
+            ? "opacity-100 scale-100"
+            : "opacity-0 scale-95 pointer-events-none"
+        }`}
+       >
+         {/* ❌ Close Button */}
+         <button
+           onClick={toggleMenu}
+           className="absolute top-6 right-6 text-white text-3xl z-[1200]"
+         >
+           ✕
+         </button>
+
+         {/* Giant Background Text */}
+         <div className="absolute inset-0 opacity-[0.02] pointer-events-none flex items-center justify-center">
+           <div className="text-[15rem] font-black italic uppercase text-white -rotate-90">
+             FYTRR
+           </div>
+         </div>
+
+         {/* Menu Links */}
+         <div className="flex flex-col items-center justify-center h-full gap-6 text-3xl font-black italic uppercase relative z-10">
+           <Link
+             href="/"
+             onClick={toggleMenu}
+             className="text-white hover:text-brand-success"
+           >
+             Home
+           </Link>
+           <Link
+             href="/gallery"
+             onClick={toggleMenu}
+             className="text-white hover:text-brand-success"
+           >
+             Gallery
+           </Link>
+
+           <div className="w-12 h-0.5 bg-white/10 my-4" />
+
+           {!user ? (
+             <>
+               <Link
+                 href="/login"
+                 onClick={toggleMenu}
+                 className="text-white/40"
+               >
+                 Login
+               </Link>
+               <Link
+                 href="/signup"
+                 onClick={toggleMenu}
+                 className="bg-white text-black px-10 py-5 rounded-2xl shadow-xl text-xl italic"
+               >
+                 Join Race
+               </Link>
+             </>
+           ) : (
+             <>
+               <Link
+                 href="/dashboard"
+                 onClick={toggleMenu}
+                 className="text-brand-success text-4xl"
+               >
+                 Dashboard
+               </Link>
+               <button
+                 className="text-red-500/60 text-xl mt-6"
+                 onClick={async () => {
+                   toggleMenu();
+                   await supabase.auth.signOut();
+                   setUser(null);
+                   router.push("/");
+                   router.refresh();
+                 }}
+               >
+                 Logout
+               </button>
+             </>
+           )}
+
+           <div className="absolute bottom-10 text-[10px] tracking-[0.5em] text-white/10 italic">
+             Beyond Limits • 2026
+           </div>
+         </div>
+       </div>
+     </div>
+   </nav>
+ );
+
 }

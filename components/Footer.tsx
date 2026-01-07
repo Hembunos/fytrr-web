@@ -25,11 +25,21 @@ export default function Footer() {
           </div>
 
           {/* Navigation Links */}
+          {/* Navigation Links */}
           <div className="space-y-6 text-center sm:text-left">
             <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-accent/60">
               Sitemap
             </h4>
             <ul className="space-y-4 text-xs font-black uppercase tracking-widest">
+              {/* Added About Us Link */}
+              <li>
+                <Link
+                  href="/about"
+                  className="hover:text-brand-success transition-colors"
+                >
+                  About Us
+                </Link>
+              </li>
               <li>
                 <Link
                   href="/"
@@ -52,14 +62,6 @@ export default function Footer() {
                   className="hover:text-brand-success transition-colors"
                 >
                   Race Format
-                </Link>
-              </li>
-              <li>
-                <Link
-                  href="/dashboard"
-                  className="hover:text-brand-success transition-colors"
-                >
-                  Dashboard
                 </Link>
               </li>
             </ul>
