@@ -22,33 +22,49 @@ export default function SignupClient() {
   // ⚡ Functionality Intact: No changes to the logic
   async function handleSignup() {
     setStatus(null);
+
+    // 1. Basic Validation
     if (!name || !email || !password) {
       return setStatus({ type: "error", msg: "Please fill all fields" });
     }
 
     setLoading(true);
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: { full_name: name },
-        emailRedirectTo: `${window.location.origin}/api/auth/callback?next=${redirectTo}`,
-      },
-    });
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: { full_name: name },
+          // Tip: Make sure window.location.origin is whitelisted in Supabase Dashboard
+          emailRedirectTo: `${window.location.origin}/api/auth/callback?next=${redirectTo}`,
+        },
+      });
 
-    setLoading(true); // Keeping loading until email is handled or error shown
-
-    if (error) {
+      if (error) {
+        // Supabase ki error message dikhayega (e.g. "Password too short")
+        setStatus({ type: "error", msg: error.message });
+      } else if (data?.user && data.user.identities?.length === 0) {
+        // 💡 Yeh tab hota hai jab email pehle se register ho par verify na hua ho
+        // Ya user already exist karta ho. Security ke liye Supabase success hi bolta hai
+        // par identities empty deta hai.
+        setStatus({
+          type: "error",
+          msg: "This email is already registered. Try logging in.",
+        });
+      } else {
+        // Success case
+        setStatus({
+          type: "success",
+          msg: "Athlete profile created! Please check your email to verify.",
+        });
+      }
+    } catch (err) {
+      setStatus({ type: "error", msg: "An unexpected error occurred." });
+    } finally {
+      // Loading ko hamesha end mein false karenge
       setLoading(false);
-      return setStatus({ type: "error", msg: error.message });
     }
-
-    setLoading(false);
-    setStatus({
-      type: "success",
-      msg: "Athlete profile created! Please check your email to verify.",
-    });
   }
 
   return (
