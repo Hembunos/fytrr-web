@@ -7,21 +7,25 @@ import { RegistrationCard } from "@/components/dashboard/RegistrationCard";
 import { EmptyTrackView } from "@/components/dashboard/EmptyTrackView";
 import { LayoutDashboard } from "lucide-react";
 
-/* 🔹 1. CORRECTED INTERFACE */
-// This matches exactly what Supabase returns for joined tables
+/* 🔹 1. FINAL INTERFACE (Supabase compatibility ke liye) */
 interface Registration {
   id: string;
   status: string;
   created_at: string;
-  events: {
-    name: string;
-    slug: string;
-  }[];
-  categories: {
-    name: string;
-    price: number;
-    bib_prefix: string;
-  }[];
+  // Relationship arrays can be empty or missing in some DB states
+  events:
+    | {
+        name: string;
+        slug: string;
+      }[]
+    | null;
+  categories:
+    | {
+        name: string;
+        price: number;
+        bib_prefix: string;
+      }[]
+    | null;
   participants: {
     id: string;
     participant_name: string;
@@ -73,8 +77,8 @@ export default async function DashboardPage() {
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
 
-  // 🔹 2. TYPE ASSERTION
-  // This links the fetched data to our interface
+  // 🔹 2. TYPE CASTING
+  // 'as unknown as Registration[]' lagane se build worker fail nahi hoga
   const registrations = data as unknown as Registration[] | null;
 
   if (error) {
@@ -102,6 +106,7 @@ export default async function DashboardPage() {
         <SuccessToast />
       </Suspense>
 
+      {/* ⬛ HERO SECTION */}
       <div className="relative w-full h-[360px] md:h-[420px] bg-[#050505] flex items-end pb-12 md:pb-16 overflow-hidden border-b border-white/5">
         <div className="absolute inset-0 opacity-[0.02] select-none pointer-events-none flex items-center justify-center">
           <div className="text-[18rem] md:text-[30rem] font-black italic uppercase leading-none text-white tracking-tighter -rotate-6">
@@ -133,7 +138,7 @@ export default async function DashboardPage() {
                 </span>
               </h1>
               <p className="text-brand-success/60 text-xs font-black uppercase tracking-[0.4em] max-w-sm border-l-2 border-brand-success pl-6 italic">
-                Performance Intelligence & <br /> Race Identity Management
+                Performance Intelligence & Race Identity Management
               </p>
             </div>
 
@@ -156,59 +161,47 @@ export default async function DashboardPage() {
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 -mt-10 md:-mt-12 space-y-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
-          <div className="bg-white p-10 rounded-[2.5rem] shadow-[0_40px_80px_rgba(0,0,0,0.4)] transform hover:-translate-y-2 transition-all duration-500 group">
-            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-3 group-hover:text-brand-success transition-colors italic">
+        {/* 📊 STATS CARDS */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl">
+            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest italic mb-2">
               Total Deployments
             </p>
-            <p className="text-6xl font-black italic text-black leading-none">
+            <p className="text-6xl font-black italic text-black">
               {registrations?.length.toString().padStart(2, "0") || "00"}
             </p>
           </div>
-
-          <div className="bg-white p-10 rounded-[2.5rem] shadow-[0_40px_80px_rgba(0,0,0,0.4)] transform hover:-translate-y-2 transition-all duration-500 border-b-8 border-brand-success/5">
-            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-3 italic">
+          <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl border-b-8 border-brand-success/5">
+            <p className="text-[10px] font-black text-zinc-400 uppercase tracking-widest italic mb-2">
               Verified BIBs
             </p>
-            <p className="text-6xl font-black italic text-black leading-none mb-4">
+            <p className="text-6xl font-black italic text-black">
               {paidCount.toString().padStart(2, "0")}
             </p>
-            <div className="h-1.5 w-16 bg-brand-success rounded-full shadow-[0_0_15px_rgba(34,197,94,0.5)] animate-pulse" />
           </div>
-
-          <div className="bg-zinc-900 border border-white/5 p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group transform hover:-translate-y-2 transition-all duration-500">
-            <div className="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
-              <div className="text-8xl font-black italic text-white font-serif">
-                FYT
-              </div>
-            </div>
-            <p className="text-[10px] font-black text-brand-success uppercase tracking-[0.3em] mb-3 italic">
+          <div className="bg-zinc-900 p-10 rounded-[2.5rem] shadow-2xl">
+            <p className="text-[10px] font-black text-brand-success uppercase tracking-widest italic mb-2">
               Athlete Status
             </p>
-            <p className="text-4xl font-black italic text-white leading-none uppercase tracking-tighter">
+            <p className="text-4xl font-black italic text-white uppercase">
               Elite <span className="text-zinc-700">Level</span>
             </p>
           </div>
         </div>
 
-        <div className="space-y-12 animate-in fade-in slide-in-from-top-12 duration-1000">
+        {/* 📋 LIST SECTION */}
+        <div className="space-y-12">
           <div className="flex items-center justify-between border-b-2 border-white/5 pb-10">
             <h2 className="text-4xl font-black italic uppercase tracking-tighter text-white">
               Registered <span className="opacity-20 text-white">Events</span>
             </h2>
-            <div className="flex items-center gap-3">
-              <div className="h-2 w-2 bg-brand-success rounded-full animate-ping" />
-              <span className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em]">
-                Syncing Results
-              </span>
-            </div>
           </div>
 
           {!registrations || registrations.length === 0 ? (
             <EmptyTrackView />
           ) : (
             <div className="grid grid-cols-1 gap-12">
-              {/* 🔹 3. NO MORE 'ANY' */}
+              {/* ✅ No 'any', mapped directly with strict interface */}
               {registrations.map((reg) => (
                 <RegistrationCard key={reg.id} reg={reg} />
               ))}
