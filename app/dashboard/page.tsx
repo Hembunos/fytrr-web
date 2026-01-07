@@ -7,6 +7,27 @@ import { RegistrationCard } from "@/components/dashboard/RegistrationCard";
 import { EmptyTrackView } from "@/components/dashboard/EmptyTrackView";
 import { LayoutDashboard } from "lucide-react";
 
+// 1. Updated Interface: Events must be an array to match Supabase join logic
+interface Registration {
+  id: string;
+  status: string;
+  created_at: string;
+  events: {
+    name: string;
+    slug: string;
+  }[]; // Relationship queries in Supabase always return arrays
+  categories: {
+    name: string;
+    price: number;
+    bib_prefix: string;
+  };
+  participants: {
+    id: string;
+    participant_name: string;
+    bib_number: string | null;
+  }[];
+}
+
 export default async function DashboardPage() {
   const supabase = await createSupabaseServer();
 
@@ -18,7 +39,7 @@ export default async function DashboardPage() {
     redirect("/login?redirectTo=/dashboard");
   }
 
-  /* 👮 JWT ROLE CHECK - Forced Logic */
+  /* 👮 JWT ROLE CHECK */
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
@@ -76,19 +97,16 @@ export default async function DashboardPage() {
         <SuccessToast />
       </Suspense>
 
-      {/* ⬛ HERO SECTION - Bottom Aligned with Base Padding */}
+      {/* ⬛ HERO SECTION */}
       <div className="relative w-full h-[360px] md:h-[420px] bg-[#050505] flex items-end pb-12 md:pb-16 overflow-hidden border-b border-white/5">
-        {/* Background Giant Text */}
         <div className="absolute inset-0 opacity-[0.02] select-none pointer-events-none flex items-center justify-center">
           <div className="text-[18rem] md:text-[30rem] font-black italic uppercase leading-none text-white tracking-tighter -rotate-6">
             ATHLETE
           </div>
         </div>
 
-        {/* Hero Content - Strictly Aligned with the 7xl container */}
         <div className="max-w-7xl mx-auto w-full px-6 md:px-12 relative z-20">
           <div className="w-full flex flex-col md:flex-row md:items-end justify-between gap-8">
-            {/* Left Side: Athlete Identity */}
             <div className="max-w-4xl space-y-6">
               <div className="flex items-center gap-4">
                 <span className="px-4 py-1.5 bg-brand-success text-black rounded-full italic text-[10px] font-black uppercase tracking-[0.2em] shadow-[0_0_20px_rgba(34,197,94,0.3)] animate-pulse">
@@ -117,7 +135,6 @@ export default async function DashboardPage() {
               </p>
             </div>
 
-            {/* 🛠️ ADMIN BUTTON - Aligned with the top of the Stats Cards line */}
             {isAdmin && (
               <div className="pb-2 md:pb-4 relative z-30">
                 <Link
@@ -136,11 +153,9 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      {/* 🏁 CONTENT OVERLAY - Margin Adjusted for exact card alignment */}
+      {/* 🏁 CONTENT OVERLAY */}
       <div className="relative z-10 max-w-7xl mx-auto px-6 md:px-12 -mt-10 md:-mt-12 space-y-16">
-        {/* 📊 High-Contrast Stats Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-8 duration-700">
-          {/* Total Deployments Card */}
           <div className="bg-white p-10 rounded-[2.5rem] shadow-[0_40px_80px_rgba(0,0,0,0.4)] transform hover:-translate-y-2 transition-all duration-500 group">
             <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-3 group-hover:text-brand-success transition-colors italic">
               Total Deployments
@@ -150,7 +165,6 @@ export default async function DashboardPage() {
             </p>
           </div>
 
-          {/* Verified BIBs Card */}
           <div className="bg-white p-10 rounded-[2.5rem] shadow-[0_40px_80px_rgba(0,0,0,0.4)] transform hover:-translate-y-2 transition-all duration-500 border-b-8 border-brand-success/5">
             <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.3em] mb-3 italic">
               Verified BIBs
@@ -161,7 +175,6 @@ export default async function DashboardPage() {
             <div className="h-1.5 w-16 bg-brand-success rounded-full shadow-[0_0_15px_rgba(34,197,94,0.5)] animate-pulse" />
           </div>
 
-          {/* Athlete Status Card (Admin Style Dark) */}
           <div className="bg-zinc-900 border border-white/5 p-10 rounded-[2.5rem] shadow-2xl relative overflow-hidden group transform hover:-translate-y-2 transition-all duration-500">
             <div className="absolute -right-4 -top-4 opacity-5 group-hover:opacity-10 transition-opacity">
               <div className="text-8xl font-black italic text-white font-serif">
@@ -195,7 +208,8 @@ export default async function DashboardPage() {
             <EmptyTrackView />
           ) : (
             <div className="grid grid-cols-1 gap-12">
-              {registrations.map((reg) => (
+              {/* Using explicit casting here matches the component props for the build */}
+              {registrations.map((reg: any) => (
                 <RegistrationCard key={reg.id} reg={reg} />
               ))}
             </div>

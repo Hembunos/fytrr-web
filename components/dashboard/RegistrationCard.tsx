@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-/* 🔹 TYPES (required for Vercel build) */
+/* 🔹 TYPES (Fixed for Supabase relationship arrays) */
 type Participant = {
   id: string;
   participant_name: string;
@@ -10,10 +10,13 @@ type Participant = {
 type Registration = {
   id: string;
   status: string;
-  events?: {
-    name?: string;
-    slug?: string;
-  } | null;
+  // Supabase returns related tables as arrays
+  events?:
+    | {
+        name?: string;
+        slug?: string;
+      }[]
+    | null;
   categories?: {
     name?: string;
     price?: number;
@@ -24,6 +27,9 @@ type Registration = {
 /* 🔹 COMPONENT */
 export const RegistrationCard = ({ reg }: { reg: Registration }) => {
   const isPaid = reg.status === "paid";
+
+  // Safe extraction of the first event from the array
+  const eventData = Array.isArray(reg.events) ? reg.events[0] : null;
 
   const totalPrice =
     (reg.categories?.price || 0) * (reg.participants?.length || 1);
@@ -57,7 +63,8 @@ export const RegistrationCard = ({ reg }: { reg: Registration }) => {
             </div>
 
             <h3 className="text-4xl md:text-7xl font-black italic uppercase tracking-tighter leading-[0.8] text-black">
-              {reg.events?.name}
+              {/* Use the extracted eventData */}
+              {eventData?.name || "Event Title"}
               <br />
               <span className="text-black/10 text-2xl md:text-4xl block mt-2">
                 {reg.categories?.name}
@@ -108,10 +115,10 @@ export const RegistrationCard = ({ reg }: { reg: Registration }) => {
           ))}
         </div>
 
-        {/* 🏁 Results */}
-        {isPaid && (
+        {/* 🏁 Results - Use eventData slug */}
+        {isPaid && eventData?.slug && (
           <Link
-            href={`/event/${reg.events?.slug}/results`}
+            href={`/event/${eventData.slug}/results`}
             className="flex items-center justify-center w-full bg-black text-white py-6 rounded-3xl font-black uppercase tracking-[0.4em] text-[11px] hover:bg-brand-success hover:text-black transition-all shadow-2xl group"
           >
             Official Results
