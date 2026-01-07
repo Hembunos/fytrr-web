@@ -4,18 +4,19 @@ interface RegistrationCardProps {
   reg: {
     id: string;
     status: string;
-    events:
-      | {
-          name: string;
-          slug: string;
-        }[]
-      | null; // 👈 array
-    categories:
-      | {
-          name: string;
-          price: number;
-        }[]
-      | null; // 👈 array
+
+    // ✅ OBJECT (not array)
+    events: {
+      name: string;
+      slug: string;
+    } | null;
+
+    // ✅ OBJECT (not array)
+    categories: {
+      name: string;
+      price: number;
+    } | null;
+
     participants: {
       id: string;
       participant_name: string;
@@ -24,33 +25,33 @@ interface RegistrationCardProps {
   };
 }
 
-
 export const RegistrationCard = ({ reg }: RegistrationCardProps) => {
   const isPaid = reg.status === "paid";
 
-  const event = reg.events?.[0] ?? null;
-  const category = reg.categories?.[0] ?? null;
-
+  // ✅ Correct access (NO [0])
+  const event = reg.events;
+  const category = reg.categories;
 
   const unitPrice = category?.price ?? 0;
-  const participantCount = reg.participants?.length || 1;
+  const participantCount = reg.participants.length;
   const totalPrice = unitPrice * participantCount;
 
   return (
     <div
       className="group relative bg-white
-    border border-zinc-200
-    rounded-[2.5rem]
-    overflow-hidden
-    shadow-[0_40px_90px_rgba(0,0,0,0.35)]
-    transition-all duration-500
-    hover:shadow-[0_60px_120px_rgba(0,0,0,0.45)]
-    hover:-translate-y-1"
+      border border-zinc-200
+      rounded-[2.5rem]
+      overflow-hidden
+      shadow-[0_40px_90px_rgba(0,0,0,0.35)]
+      transition-all duration-500
+      hover:shadow-[0_60px_120px_rgba(0,0,0,0.45)]
+      hover:-translate-y-1"
     >
-      {/* Status Bar */}
+      {/* STATUS BAR */}
       <div
-        className={`absolute top-0 left-0 right-0 h-2.5 ${isPaid ? "bg-brand-success" : "bg-orange-500"
-          }`}
+        className={`absolute top-0 left-0 right-0 h-2.5 ${
+          isPaid ? "bg-brand-success" : "bg-orange-500"
+        }`}
       />
 
       <div className="p-8 md:p-12 space-y-12">
@@ -69,11 +70,11 @@ export const RegistrationCard = ({ reg }: RegistrationCardProps) => {
             {/* EVENT + CATEGORY */}
             <div>
               <h3 className="text-4xl md:text-6xl font-black italic uppercase tracking-tight text-zinc-950 leading-[0.95]">
-                {event?.name}
+                {event?.name ?? "Event"}
               </h3>
 
               <p className="text-lg md:text-2xl font-black italic uppercase text-zinc-400 mt-2 tracking-wide">
-                {category?.name}
+                {category?.name ?? "Category"}
               </p>
             </div>
           </div>
@@ -81,14 +82,13 @@ export const RegistrationCard = ({ reg }: RegistrationCardProps) => {
           {/* PRICE */}
           <div
             className="relative bg-white px-10 py-10 rounded-[2rem]
-          border border-black/10
-          text-center flex flex-col justify-center
-          shadow-inner overflow-hidden"
+            border border-black/10
+            text-center flex flex-col justify-center
+            shadow-inner overflow-hidden"
           >
-            {/* subtle glow */}
             <div
               className="absolute inset-0 opacity-[0.04] pointer-events-none
-            bg-[radial-gradient(circle_at_top_right,black,transparent_65%)]"
+              bg-[radial-gradient(circle_at_top_right,black,transparent_65%)]"
             />
 
             <p className="text-[10px] font-black text-zinc-400 uppercase tracking-[0.25em] mb-3 relative z-10">
@@ -106,11 +106,11 @@ export const RegistrationCard = ({ reg }: RegistrationCardProps) => {
             <div
               key={p.id}
               className="group/item flex justify-between items-center
-            bg-zinc-50 border border-zinc-100
-            p-7 rounded-[1.5rem]
-            transition-all
-            hover:bg-white
-            hover:shadow-md"
+              bg-zinc-50 border border-zinc-100
+              p-7 rounded-[1.5rem]
+              transition-all
+              hover:bg-white
+              hover:shadow-md"
             >
               <div>
                 <p className="text-[9px] font-black text-zinc-400 uppercase tracking-widest mb-1">
@@ -124,11 +124,11 @@ export const RegistrationCard = ({ reg }: RegistrationCardProps) => {
               {isPaid && p.bib_number ? (
                 <div
                   className="bg-zinc-950 text-white
-                px-6 py-3 rounded-2xl
-                font-black text-lg
-                tracking-widest
-                shadow-[0_10px_30px_rgba(0,0,0,0.4)]
-                transform group-hover/item:rotate-3 transition-transform"
+                  px-6 py-3 rounded-2xl
+                  font-black text-lg
+                  tracking-widest
+                  shadow-[0_10px_30px_rgba(0,0,0,0.4)]
+                  transform group-hover/item:rotate-3 transition-transform"
                 >
                   {p.bib_number}
                 </div>
@@ -146,22 +146,20 @@ export const RegistrationCard = ({ reg }: RegistrationCardProps) => {
           <Link
             href={`/event/${event.slug}/results`}
             className="group relative block text-center
-          bg-zinc-950 text-white
-          py-7 rounded-[1.5rem]
-          font-black uppercase tracking-[0.3em] text-sm
-          transition-all overflow-hidden
-          hover:bg-brand-success hover:text-black"
+            bg-zinc-950 text-white
+            py-7 rounded-[1.5rem]
+            font-black uppercase tracking-[0.3em] text-sm
+            transition-all overflow-hidden
+            hover:bg-brand-success hover:text-black"
           >
-            {/* light sweep */}
             <span
               className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent
-            opacity-0 group-hover:opacity-100 transition-opacity duration-500"
+              opacity-0 group-hover:opacity-100 transition-opacity duration-500"
             />
-
             <span className="relative z-10">View Official Results →</span>
           </Link>
         )}
       </div>
     </div>
   );
-}
+};

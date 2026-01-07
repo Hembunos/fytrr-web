@@ -36,7 +36,7 @@ export default async function RootLayout({
         />
 
         <PageTransition>
-          <main>{children}</main>
+          <main className="relative">{children}</main>
         </PageTransition>
 
         <Footer />
