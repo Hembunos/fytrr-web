@@ -49,7 +49,7 @@ export default function Footer() {
               {/* Naya Section: Event History / Past Events */}
               <li>
                 <Link
-                  href="/events/history"
+                  href="/past-events"
                   className="hover:text-brand-success transition-colors flex items-center justify-center sm:justify-start gap-2"
                 >
                   Event History
