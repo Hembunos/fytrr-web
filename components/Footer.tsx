@@ -25,13 +25,11 @@ export default function Footer() {
           </div>
 
           {/* Navigation Links */}
-          {/* Navigation Links */}
           <div className="space-y-6 text-center sm:text-left">
             <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-brand-accent/60">
               Sitemap
             </h4>
             <ul className="space-y-4 text-xs font-black uppercase tracking-widest">
-              {/* Added About Us Link */}
               <li>
                 <Link
                   href="/about"
@@ -46,6 +44,18 @@ export default function Footer() {
                   className="hover:text-brand-success transition-colors"
                 >
                   Home
+                </Link>
+              </li>
+              {/* Naya Section: Event History / Past Events */}
+              <li>
+                <Link
+                  href="/events/history"
+                  className="hover:text-brand-success transition-colors flex items-center justify-center sm:justify-start gap-2"
+                >
+                  Event History
+                  <span className="text-[8px] bg-brand-muted px-2 py-0.5 rounded text-brand-success">
+                    NEW
+                  </span>
                 </Link>
               </li>
               <li>

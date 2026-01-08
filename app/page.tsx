@@ -174,7 +174,7 @@ export default async function LandingPage() {
             <div key={i} className="relative group flex flex-col">
               {/* NUMBER + LINE */}
               <div className="relative h-44 mb-12 overflow-visible">
-                {/* BIG NUMBER */}
+                {/* BIG NUMBER - Option 3: Premium Gradient Visibility */}
                 <span
                   className="
               absolute bottom-10
@@ -186,8 +186,15 @@ export default async function LandingPage() {
               font-black italic
               leading-none
               select-none
-              text-white/10
               pointer-events-none
+
+              /* 🟢 GRADIENT LOGIC */
+              bg-gradient-to-b from-white/[0.18] to-transparent 
+              bg-clip-text text-transparent
+              
+              /* Hover effect: Gradient becomes more intense */
+              group-hover:from-white/[0.25] 
+              transition-all duration-700
             "
                 >
                   0{i + 1}
@@ -212,7 +219,7 @@ export default async function LandingPage() {
                 <h3 className="font-black italic text-4xl uppercase tracking-tighter text-white">
                   {f.title}
                 </h3>
-                <p className="text-[10px] md:text-xs text-white/30 font-black leading-relaxed uppercase tracking-[0.3em] max-w-xs italic mx-auto md:mx-0">
+                <p className="text-[10px] md:text-xs text-white/40 font-black leading-relaxed uppercase tracking-[0.3em] max-w-xs italic mx-auto md:mx-0">
                   {f.desc}
                 </p>
               </div>
