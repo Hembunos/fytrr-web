@@ -10,13 +10,19 @@ export default function RaceFormat() {
   const movementRef = useRef<HTMLDivElement>(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
 
+  // 1. Force scroll to top on initial page load
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
+
+  // 2. Handle scroll visibility for the "Back to Top" button
   useEffect(() => {
     const handleScroll = () => setShowBackToTop(window.scrollY > 400);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // FIXED: Added | null to the RefObject type to satisfy TypeScript
+  // 3. FIXED: Type definition for scrollToSection to satisfy TypeScript
   const scrollToSection = (ref: React.RefObject<HTMLDivElement | null>) => {
     if (ref.current) {
       window.scrollTo({
@@ -62,10 +68,9 @@ export default function RaceFormat() {
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="4" /* Bolder arrow */
+          strokeWidth="4"
           strokeLinecap="round"
           strokeLinejoin="round"
-          className="relative top-[0px]"
         >
           <line x1="12" y1="19" x2="12" y2="5"></line>
           <polyline points="5 12 12 5 19 12"></polyline>
@@ -105,7 +110,7 @@ export default function RaceFormat() {
             <table className="w-full text-left border-collapse min-w-[750px]">
               <thead>
                 <tr className="bg-brand-success text-black uppercase font-black italic text-xs md:text-sm">
-                  <th className="p-4 md:p-8 border-r border-black/10">
+                  <th className="p-4 md:p-8 border-r border-black/10 text-center">
                     Zone & Segment
                   </th>
                   <th className="p-4 md:p-8 border-r border-black/10">
@@ -177,7 +182,7 @@ export default function RaceFormat() {
             {exerciseCards.map((card, idx) => (
               <div
                 key={idx}
-                className="group flex flex-col relative overflow-hidden rounded-[3rem] border border-white/10 bg-zinc-900/10 transition-all duration-700 hover:border-brand-success/50 hover:bg-zinc-900/30"
+                className="group flex flex-col relative overflow-hidden rounded-[3rem] border border-white/10 bg-zinc-900/10 transition-all duration-700 hover:border-brand-success/50 hover:bg-zinc-900/30 shadow-2xl"
               >
                 <div className="p-8 md:p-12 space-y-8 flex-grow">
                   <div className="flex justify-between items-start gap-4 min-h-[80px] md:min-h-[110px]">
@@ -193,7 +198,7 @@ export default function RaceFormat() {
                       {card.zone}
                     </span>
                   </div>
-                  <div className="aspect-[16/10] w-full overflow-hidden rounded-3xl bg-black relative border border-white/5 shadow-2xl">
+                  <div className="aspect-[16/10] w-full overflow-hidden rounded-3xl bg-black relative border border-white/5 shadow-inner">
                     <img
                       src={card.img}
                       alt={card.title}
