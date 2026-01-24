@@ -71,7 +71,7 @@ export default function Footer() {
                   href="/format"
                   className="hover:text-brand-success transition-colors"
                 >
-                  Race Format
+                  Hybrid Race Format
                 </Link>
               </li>
             </ul>
