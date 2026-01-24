@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
-// Adjust this import path based on where you saved the file above
+// Ensure these are exported from your lib/raceData file
 import { raceDataGroups, exerciseCards } from "@/lib/raceData";
 
 export default function RaceFormat() {
+  // --- Scroll & State Logic ---
   const matrixRef = useRef<HTMLDivElement>(null);
   const movementRef = useRef<HTMLDivElement>(null);
   const [showBackToTop, setShowBackToTop] = useState(false);
@@ -15,11 +16,14 @@ export default function RaceFormat() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const scrollToSection = (ref: React.RefObject<HTMLDivElement>) => {
-    window.scrollTo({
-      top: ref.current ? ref.current.offsetTop - 100 : 0,
-      behavior: "smooth",
-    });
+  // FIXED: Added | null to the RefObject type to satisfy TypeScript
+  const scrollToSection = (ref: React.RefObject<HTMLDivElement | null>) => {
+    if (ref.current) {
+      window.scrollTo({
+        top: ref.current.offsetTop - 100,
+        behavior: "smooth",
+      });
+    }
   };
 
   return (
@@ -43,7 +47,7 @@ export default function RaceFormat() {
         </div>
       </nav>
 
-      {/* 🔝 Back To Top Button with Bold SVG Arrow */}
+      {/* 🔝 Back To Top Button with Bold SVG Arrow and Aligned Text */}
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
         className={`fixed bottom-8 right-8 z-[100] px-6 py-3 bg-brand-success text-black rounded-full shadow-2xl flex items-center justify-center gap-3 transition-all duration-500 hover:scale-105 active:scale-95 ${
@@ -58,9 +62,10 @@ export default function RaceFormat() {
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth="4"
+          strokeWidth="4" /* Bolder arrow */
           strokeLinecap="round"
           strokeLinejoin="round"
+          className="relative top-[0px]"
         >
           <line x1="12" y1="19" x2="12" y2="5"></line>
           <polyline points="5 12 12 5 19 12"></polyline>
@@ -92,7 +97,7 @@ export default function RaceFormat() {
         {/* 📊 Matrix Section */}
         <div ref={matrixRef} className="space-y-8 scroll-mt-28">
           <div className="flex items-end justify-between border-b border-white/10 pb-4">
-            <h2 className="text-2xl md:text-5xl font-black italic uppercase text-brand-success tracking-tighter text-shadow">
+            <h2 className="text-2xl md:text-5xl font-black italic uppercase text-brand-success tracking-tighter">
               Event Breakdown
             </h2>
           </div>
@@ -126,7 +131,7 @@ export default function RaceFormat() {
                         {rowIdx === 0 && (
                           <td
                             rowSpan={group.activities.length}
-                            className="p-4 md:p-8 border-r border-white/5 align-middle text-center bg-black/20"
+                            className="p-4 md:p-8 border-r border-black/10 align-middle text-center bg-black/20"
                           >
                             <span className="text-brand-success italic font-[900] block text-xl md:text-4xl tracking-tight uppercase whitespace-nowrap">
                               {group.zone}
